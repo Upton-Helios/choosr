@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { List, Plus, Shuffle, Zap } from "lucide-react-native";
+import { List, Moon, Plus, Shuffle, Sun, Zap } from "lucide-react-native";
 import React, { useRef } from "react";
 import {
   Alert,
@@ -20,6 +20,7 @@ import {
   FREE_LIST_LIMIT,
   useLists,
 } from "@/context/ListsContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
 function ListCard({
@@ -61,7 +62,7 @@ function ListCard({
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
         <View style={styles.cardLeft}>
-          <View style={[styles.iconWrap, { backgroundColor: colors.primary + "22" }]}>
+          <View style={[styles.iconWrap, { backgroundColor: colors.primary + "18" }]}>
             <List size={20} color={colors.primary} />
           </View>
           <View style={styles.cardText}>
@@ -86,6 +87,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { lists, isPremium, deleteList } = useLists();
+  const { isDark, toggleTheme } = useTheme();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -107,27 +109,48 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <View>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>Decide</Text>
           <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-            {lists.length === 0 ? "No lists yet" : `${lists.length} list${lists.length !== 1 ? "s" : ""}`}
+            {lists.length === 0
+              ? "No lists yet"
+              : `${lists.length} list${lists.length !== 1 ? "s" : ""}`}
           </Text>
         </View>
-        {!isPremium && (
+        <View style={styles.headerActions}>
+          {!isPremium && (
+            <TouchableOpacity
+              onPress={() => router.push("/paywall")}
+              style={[
+                styles.premiumBadge,
+                { backgroundColor: colors.accent + "18", borderColor: colors.accent + "44" },
+              ]}
+            >
+              <Zap size={12} color={colors.accent} />
+              <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            onPress={() => router.push("/paywall")}
-            style={[styles.premiumBadge, { backgroundColor: colors.accent + "22", borderColor: colors.accent + "55" }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              toggleTheme();
+            }}
+            style={[styles.themeBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
           >
-            <Zap size={12} color={colors.accent} />
-            <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
+            {isDark ? (
+              <Sun size={18} color={colors.mutedForeground} />
+            ) : (
+              <Moon size={18} color={colors.mutedForeground} />
+            )}
           </TouchableOpacity>
-        )}
+        </View>
       </View>
 
       {lists.length === 0 ? (
         <View style={styles.empty}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.card }]}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Shuffle size={40} color={colors.primary} />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No decision lists yet</Text>
@@ -152,6 +175,7 @@ export default function HomeScreen() {
         />
       )}
 
+      {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary, bottom: bottomPad + 24 }]}
         onPress={handleNewList}
@@ -166,7 +190,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingBottom: 16,
     flexDirection: "row",
     alignItems: "flex-end",
@@ -174,16 +198,30 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 34, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
   headerSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingBottom: 4,
+  },
   premiumBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
   },
   premiumText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  themeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
   list: { paddingHorizontal: 16, paddingTop: 8, gap: 10 },
   card: {
     flexDirection: "row",
@@ -198,9 +236,24 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   cardTitle: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
   cardSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
-  shuffleBtn: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", marginLeft: 12 },
+  shuffleBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 12,
+  },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 40, gap: 12 },
-  emptyIcon: { width: 80, height: 80, borderRadius: 24, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    borderWidth: 1,
+  },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "center" },
   emptyDesc: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
   fab: {

@@ -15,6 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ListsProvider } from "@/context/ListsContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
 SplashScreen.preventAutoHideAsync();
@@ -32,10 +33,24 @@ function RootLayoutNav() {
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="editor" options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }} />
+      <Stack.Screen
+        name="editor"
+        options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }}
+      />
       <Stack.Screen name="result" options={{ headerShown: false }} />
-      <Stack.Screen name="paywall" options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }} />
+      <Stack.Screen
+        name="paywall"
+        options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }}
+      />
     </Stack>
+  );
+}
+
+function AppProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <ListsProvider>{children}</ListsProvider>
+    </ThemeProvider>
   );
 }
 
@@ -61,9 +76,9 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <ListsProvider>
+              <AppProviders>
                 <RootLayoutNav />
-              </ListsProvider>
+              </AppProviders>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
