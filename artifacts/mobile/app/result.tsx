@@ -1,6 +1,6 @@
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
+import { ArrowLeft, CheckCircle, Pencil, Shuffle } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -45,7 +45,6 @@ export default function ResultScreen() {
   const [winner, setWinner] = useState<string>("");
 
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -66,7 +65,6 @@ export default function ResultScreen() {
     const frames = buildFrames(list.options, pick);
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
     glowAnim.setValue(0);
     scaleAnim.setValue(1);
 
@@ -84,22 +82,10 @@ export default function ResultScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
           Animated.parallel([
-            Animated.spring(scaleAnim, {
-              toValue: 1.08,
-              useNativeDriver: true,
-              friction: 4,
-            }),
-            Animated.timing(glowAnim, {
-              toValue: 1,
-              duration: 400,
-              useNativeDriver: false,
-            }),
+            Animated.spring(scaleAnim, { toValue: 1.08, useNativeDriver: true, friction: 4 }),
+            Animated.timing(glowAnim, { toValue: 1, duration: 400, useNativeDriver: false }),
           ]).start(() => {
-            Animated.spring(scaleAnim, {
-              toValue: 1,
-              useNativeDriver: true,
-              friction: 6,
-            }).start();
+            Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 6 }).start();
           });
         }
       }, accumulated);
@@ -115,9 +101,7 @@ export default function ResultScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    return () => clearTimeouts();
-  }, []);
+  useEffect(() => { return () => clearTimeouts(); }, []);
 
   if (!list) {
     return (
@@ -127,30 +111,19 @@ export default function ResultScreen() {
     );
   }
 
-  const glowColor = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["rgba(123,94,246,0)", "rgba(123,94,246,0.35)"],
-  });
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Back button */}
       <TouchableOpacity
         style={[styles.backBtn, { top: topPad + 8 }]}
-        onPress={() => {
-          clearTimeouts();
-          router.back();
-        }}
+        onPress={() => { clearTimeouts(); router.back(); }}
       >
-        <Feather name="arrow-left" size={22} color={colors.mutedForeground} />
+        <ArrowLeft size={22} color={colors.mutedForeground} />
       </TouchableOpacity>
 
-      {/* List name */}
       <Text style={[styles.listName, { color: colors.mutedForeground, marginTop: topPad + 56 }]}>
         {list.name}
       </Text>
 
-      {/* Main reveal area */}
       <View style={styles.revealArea}>
         <Animated.View
           style={[
@@ -168,9 +141,7 @@ export default function ResultScreen() {
           ]}
         >
           {phase === "idle" ? (
-            <Text style={[styles.idleText, { color: colors.mutedForeground }]}>
-              Getting ready...
-            </Text>
+            <Text style={[styles.idleText, { color: colors.mutedForeground }]}>Getting ready...</Text>
           ) : (
             <Text
               style={[
@@ -189,21 +160,19 @@ export default function ResultScreen() {
         </Animated.View>
 
         {phase === "reveal" && (
-          <Animated.View style={[styles.winnerLabel, { opacity: opacityAnim }]}>
+          <View style={styles.winnerLabel}>
             <View style={[styles.winnerBadge, { backgroundColor: colors.success + "22" }]}>
-              <Feather name="check-circle" size={14} color={colors.success} />
-              <Text style={[styles.winnerBadgeText, { color: colors.success }]}>The Pick</Text>
+              <CheckCircle size={14} color={colors.success as string} />
+              <Text style={[styles.winnerBadgeText, { color: colors.success as string }]}>The Pick</Text>
             </View>
-          </Animated.View>
+          </View>
         )}
       </View>
 
-      {/* Options count */}
       <Text style={[styles.optionsHint, { color: colors.mutedForeground }]}>
         {list.options.length} option{list.options.length !== 1 ? "s" : ""}
       </Text>
 
-      {/* Actions */}
       <View style={[styles.actions, { paddingBottom: bottomPad + 24 }]}>
         <TouchableOpacity
           style={[styles.reshuffleBtn, { backgroundColor: colors.primary }]}
@@ -211,18 +180,15 @@ export default function ResultScreen() {
           disabled={phase === "spinning"}
           activeOpacity={0.85}
         >
-          <Feather name="shuffle" size={20} color="#fff" />
+          <Shuffle size={20} color="#fff" />
           <Text style={styles.reshuffleBtnText}>Shuffle Again</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.editBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
-          onPress={() => {
-            clearTimeouts();
-            router.replace({ pathname: "/editor", params: { listId } });
-          }}
+          onPress={() => { clearTimeouts(); router.replace({ pathname: "/editor", params: { listId } }); }}
         >
-          <Feather name="edit-2" size={18} color={colors.mutedForeground} />
+          <Pencil size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>
     </View>
@@ -230,107 +196,24 @@ export default function ResultScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-  },
-  backBtn: {
-    position: "absolute",
-    left: 20,
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-  },
-  listName: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-    letterSpacing: 0.3,
-    marginBottom: 8,
-  },
-  revealArea: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    paddingHorizontal: 32,
-    gap: 16,
-  },
-  resultCard: {
-    width: "100%",
-    minHeight: 180,
-    borderRadius: 28,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-  },
-  idleText: {
-    fontSize: 18,
-    fontFamily: "Inter_400Regular",
-  },
-  resultText: {
-    fontSize: 36,
-    textAlign: "center",
-    lineHeight: 44,
-  },
-  winnerLabel: {
-    alignItems: "center",
-  },
-  winnerBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  winnerBadgeText: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-  },
-  optionsHint: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginBottom: 24,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 24,
-    width: "100%",
-  },
+  container: { flex: 1, alignItems: "center" },
+  backBtn: { position: "absolute", left: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center", zIndex: 10 },
+  listName: { fontSize: 13, fontFamily: "Inter_500Medium", letterSpacing: 0.3, marginBottom: 8 },
+  revealArea: { flex: 1, alignItems: "center", justifyContent: "center", width: "100%", paddingHorizontal: 32, gap: 16 },
+  resultCard: { width: "100%", minHeight: 180, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", padding: 32 },
+  idleText: { fontSize: 18, fontFamily: "Inter_400Regular" },
+  resultText: { fontSize: 36, textAlign: "center", lineHeight: 44 },
+  winnerLabel: { alignItems: "center" },
+  winnerBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
+  winnerBadgeText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  optionsHint: { fontSize: 12, fontFamily: "Inter_400Regular", marginBottom: 24 },
+  actions: { flexDirection: "row", gap: 12, paddingHorizontal: 24, width: "100%" },
   reshuffleBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 16,
-    borderRadius: 18,
-    shadowColor: "#7B5EF6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
+    paddingVertical: 16, borderRadius: 18,
+    shadowColor: "#7B5EF6", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
   },
-  reshuffleBtnText: {
-    color: "#fff",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 16,
-  },
-  editBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-  errorText: {
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
-    marginTop: 100,
-  },
+  reshuffleBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 16 },
+  editBtn: { width: 56, height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  errorText: { fontSize: 16, fontFamily: "Inter_400Regular", marginTop: 100 },
 });

@@ -1,6 +1,6 @@
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
+import { List, Plus, Shuffle, Zap } from "lucide-react-native";
 import React, { useRef } from "react";
 import {
   Alert,
@@ -37,20 +37,11 @@ function ListCard({
   const scale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
-    Animated.spring(scale, {
-      toValue: 0.97,
-      useNativeDriver: true,
-      speed: 30,
-    }).start();
+    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 30 }).start();
   }
   function handlePressOut() {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 30,
-    }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30 }).start();
   }
-
   function handleLongPress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(item.name, "What would you like to do?", [
@@ -71,7 +62,7 @@ function ListCard({
       >
         <View style={styles.cardLeft}>
           <View style={[styles.iconWrap, { backgroundColor: colors.primary + "22" }]}>
-            <Feather name="list" size={20} color={colors.primary} />
+            <List size={20} color={colors.primary} />
           </View>
           <View style={styles.cardText}>
             <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
@@ -84,7 +75,7 @@ function ListCard({
           </View>
         </View>
         <View style={[styles.shuffleBtn, { backgroundColor: colors.primary }]}>
-          <Feather name="shuffle" size={18} color="#fff" />
+          <Shuffle size={18} color="#fff" />
         </View>
       </Pressable>
     </Animated.View>
@@ -110,24 +101,17 @@ export default function HomeScreen() {
   function handleDelete(id: string) {
     Alert.alert("Delete List", "This cannot be undone.", [
       { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => deleteList(id),
-      },
+      { text: "Delete", style: "destructive", onPress: () => deleteList(id) },
     ]);
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <View>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>Decide</Text>
           <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-            {lists.length === 0
-              ? "No lists yet"
-              : `${lists.length} list${lists.length !== 1 ? "s" : ""}`}
+            {lists.length === 0 ? "No lists yet" : `${lists.length} list${lists.length !== 1 ? "s" : ""}`}
           </Text>
         </View>
         {!isPremium && (
@@ -135,7 +119,7 @@ export default function HomeScreen() {
             onPress={() => router.push("/paywall")}
             style={[styles.premiumBadge, { backgroundColor: colors.accent + "22", borderColor: colors.accent + "55" }]}
           >
-            <Feather name="zap" size={12} color={colors.accent} />
+            <Zap size={12} color={colors.accent} />
             <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
           </TouchableOpacity>
         )}
@@ -144,11 +128,9 @@ export default function HomeScreen() {
       {lists.length === 0 ? (
         <View style={styles.empty}>
           <View style={[styles.emptyIcon, { backgroundColor: colors.card }]}>
-            <Feather name="shuffle" size={40} color={colors.primary} />
+            <Shuffle size={40} color={colors.primary} />
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-            No decision lists yet
-          </Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No decision lists yet</Text>
           <Text style={[styles.emptyDesc, { color: colors.mutedForeground }]}>
             Create your first list and let fate decide for you.
           </Text>
@@ -157,10 +139,7 @@ export default function HomeScreen() {
         <FlatList
           data={lists}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: bottomPad + 100 },
-          ]}
+          contentContainerStyle={[styles.list, { paddingBottom: bottomPad + 100 }]}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <ListCard
@@ -173,16 +152,12 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* FAB */}
       <TouchableOpacity
-        style={[
-          styles.fab,
-          { backgroundColor: colors.primary, bottom: bottomPad + 24 },
-        ]}
+        style={[styles.fab, { backgroundColor: colors.primary, bottom: bottomPad + 24 }]}
         onPress={handleNewList}
         activeOpacity={0.85}
       >
-        <Feather name="plus" size={28} color="#fff" />
+        <Plus size={28} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -197,16 +172,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-between",
   },
-  headerTitle: {
-    fontSize: 34,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: -0.5,
-  },
-  headerSub: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
-  },
+  headerTitle: { fontSize: 34, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  headerSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
   premiumBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -216,15 +183,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  premiumText: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  list: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    gap: 10,
-  },
+  premiumText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  list: { paddingHorizontal: 16, paddingTop: 8, gap: 10 },
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -233,63 +193,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
   },
-  cardLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  cardLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   cardText: { flex: 1 },
-  cardTitle: {
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-  },
-  cardSub: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
-  },
-  shuffleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 12,
-  },
-  empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 40,
-    gap: 12,
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-    textAlign: "center",
-  },
-  emptyDesc: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    lineHeight: 21,
-  },
+  cardTitle: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
+  cardSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  shuffleBtn: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", marginLeft: 12 },
+  empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 40, gap: 12 },
+  emptyIcon: { width: 80, height: 80, borderRadius: 24, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  emptyTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "center" },
+  emptyDesc: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
   fab: {
     position: "absolute",
     right: 24,

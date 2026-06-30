@@ -1,12 +1,10 @@
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { Plus, Trash2, X } from "lucide-react-native";
+import React, { useRef, useState } from "react";
 import {
   Alert,
-  FlatList,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -70,19 +68,11 @@ export default function EditorScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Custom header */}
       <View
-        style={[
-          styles.header,
-          {
-            paddingTop: topPad + 12,
-            borderBottomColor: colors.border,
-            backgroundColor: colors.background,
-          },
-        ]}
+        style={[styles.header, { paddingTop: topPad + 12, borderBottomColor: colors.border, backgroundColor: colors.background }]}
       >
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Feather name="x" size={22} color={colors.mutedForeground} />
+          <X size={22} color={colors.mutedForeground} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>
           {isEdit ? "Edit List" : "New List"}
@@ -98,18 +88,10 @@ export default function EditorScreen() {
         keyboardShouldPersistTaps="handled"
         bottomOffset={16}
       >
-        {/* List name */}
         <View style={styles.section}>
           <Text style={[styles.label, { color: colors.mutedForeground }]}>LIST NAME</Text>
           <TextInput
-            style={[
-              styles.nameInput,
-              {
-                backgroundColor: colors.card,
-                color: colors.foreground,
-                borderColor: colors.border,
-              },
-            ]}
+            style={[styles.nameInput, { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border }]}
             placeholder="e.g. Where to eat tonight"
             placeholderTextColor={colors.mutedForeground}
             value={name}
@@ -119,19 +101,12 @@ export default function EditorScreen() {
           />
         </View>
 
-        {/* Options */}
         <View style={styles.section}>
           <Text style={[styles.label, { color: colors.mutedForeground }]}>
             OPTIONS ({options.length})
           </Text>
 
-          {/* Add option input */}
-          <View
-            style={[
-              styles.addRow,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
+          <View style={[styles.addRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TextInput
               ref={inputRef}
               style={[styles.optionInput, { color: colors.foreground }]}
@@ -145,18 +120,12 @@ export default function EditorScreen() {
             <TouchableOpacity
               onPress={handleAddOption}
               disabled={!newOption.trim()}
-              style={[
-                styles.addBtn,
-                {
-                  backgroundColor: newOption.trim() ? colors.primary : colors.muted,
-                },
-              ]}
+              style={[styles.addBtn, { backgroundColor: newOption.trim() ? colors.primary : colors.muted }]}
             >
-              <Feather name="plus" size={18} color={newOption.trim() ? "#fff" : colors.mutedForeground} />
+              <Plus size={18} color={newOption.trim() ? "#fff" : colors.mutedForeground} />
             </TouchableOpacity>
           </View>
 
-          {/* Options list */}
           {options.length > 0 && (
             <View style={[styles.optionsList, { borderColor: colors.border }]}>
               {options.map((opt, i) => (
@@ -164,22 +133,15 @@ export default function EditorScreen() {
                   key={i}
                   style={[
                     styles.optionRow,
-                    {
-                      backgroundColor: colors.card,
-                      borderBottomColor: i < options.length - 1 ? colors.border : "transparent",
-                    },
+                    { backgroundColor: colors.card, borderBottomColor: i < options.length - 1 ? colors.border : "transparent" },
                   ]}
                 >
                   <View style={[styles.optionIndex, { backgroundColor: colors.secondary }]}>
-                    <Text style={[styles.optionIndexText, { color: colors.mutedForeground }]}>
-                      {i + 1}
-                    </Text>
+                    <Text style={[styles.optionIndexText, { color: colors.mutedForeground }]}>{i + 1}</Text>
                   </View>
-                  <Text style={[styles.optionText, { color: colors.foreground }]} numberOfLines={1}>
-                    {opt}
-                  </Text>
+                  <Text style={[styles.optionText, { color: colors.foreground }]} numberOfLines={1}>{opt}</Text>
                   <TouchableOpacity onPress={() => handleRemoveOption(i)} style={styles.removeBtn}>
-                    <Feather name="trash-2" size={16} color={colors.destructive} />
+                    <Trash2 size={16} color={colors.destructive} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -209,112 +171,23 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontFamily: "Inter_600SemiBold",
-  },
-  saveBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  saveBtnText: {
-    color: "#fff",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 14,
-  },
-  content: {
-    padding: 20,
-    gap: 24,
-  },
+  backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold" },
+  saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  saveBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  content: { padding: 20, gap: 24 },
   section: { gap: 10 },
-  label: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 0.8,
-  },
-  nameInput: {
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
-  },
-  addRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingLeft: 16,
-    paddingRight: 6,
-    paddingVertical: 6,
-    gap: 8,
-  },
-  optionInput: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-    paddingVertical: 8,
-  },
-  addBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  optionsList: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
-    borderBottomWidth: 1,
-  },
-  optionIndex: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  optionIndexText: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-  },
-  optionText: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-  },
-  removeBtn: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyOptions: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    padding: 20,
-    alignItems: "center",
-  },
-  emptyOptionsText: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-  },
+  label: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.8 },
+  nameInput: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontFamily: "Inter_400Regular" },
+  addRow: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, paddingLeft: 16, paddingRight: 6, paddingVertical: 6, gap: 8 },
+  optionInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 8 },
+  addBtn: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  optionsList: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  optionRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, gap: 12, borderBottomWidth: 1 },
+  optionIndex: { width: 24, height: 24, borderRadius: 7, alignItems: "center", justifyContent: "center" },
+  optionIndexText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  optionText: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
+  removeBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  emptyOptions: { borderRadius: 14, borderWidth: 1, borderStyle: "dashed", padding: 20, alignItems: "center" },
+  emptyOptionsText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
 });
