@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { List, Moon, Plus, Shuffle, Sun, Zap } from "lucide-react-native";
+import { List, Plus, Shuffle, Zap } from "lucide-react-native";
 import React, { useRef } from "react";
 import {
   Alert,
@@ -23,7 +23,6 @@ import {
   FREE_LIST_LIMIT,
   useLists,
 } from "@/context/ListsContext";
-import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
 function ListCard({
@@ -90,7 +89,6 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { lists, isPremium, deleteList } = useLists();
-  const { isDark, toggleTheme } = useTheme();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -124,41 +122,21 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.headerTop}>
-          <View
-            style={[
-              styles.logoWrap,
-              isDark && { backgroundColor: "#FFFFFF" },
-            ]}
-          >
+          <View style={styles.logoWrap}>
             <Image source={logoSource} style={styles.logo} resizeMode="contain" />
           </View>
-          <View style={styles.headerActions}>
-            {!isPremium && (
-              <TouchableOpacity
-                onPress={() => router.push("/paywall")}
-                style={[
-                  styles.premiumBadge,
-                  { backgroundColor: colors.accent + "18", borderColor: colors.accent + "44" },
-                ]}
-              >
-                <Zap size={12} color={colors.accent} />
-                <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
-              </TouchableOpacity>
-            )}
+          {!isPremium && (
             <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                toggleTheme();
-              }}
-              style={[styles.themeBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+              onPress={() => router.push("/paywall")}
+              style={[
+                styles.premiumBadge,
+                { backgroundColor: colors.accent + "18", borderColor: colors.accent + "44" },
+              ]}
             >
-              {isDark ? (
-                <Sun size={18} color={colors.mutedForeground} />
-              ) : (
-                <Moon size={18} color={colors.mutedForeground} />
-              )}
+              <Zap size={12} color={colors.accent} />
+              <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
             </TouchableOpacity>
-          </View>
+          )}
         </View>
         <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
           {lists.length === 0
@@ -242,14 +220,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   premiumText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  themeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
   list: { paddingHorizontal: 16, paddingTop: 8, gap: 10 },
   card: {
     flexDirection: "row",

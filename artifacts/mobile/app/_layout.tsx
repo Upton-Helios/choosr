@@ -16,7 +16,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ListsProvider } from "@/context/ListsContext";
-import { ThemeProvider } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
 SplashScreen.preventAutoHideAsync();
@@ -48,11 +47,7 @@ function RootLayoutNav() {
 }
 
 function AppProviders({ children }: { children: React.ReactNode }) {
-  return (
-    <ThemeProvider>
-      <ListsProvider>{children}</ListsProvider>
-    </ThemeProvider>
-  );
+  return <ListsProvider>{children}</ListsProvider>;
 }
 
 export default function RootLayout() {

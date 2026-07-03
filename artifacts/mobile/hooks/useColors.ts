@@ -1,16 +1,10 @@
-import { useTheme } from "@/context/ThemeContext";
 import colors from "@/constants/colors";
 
 /**
- * Returns the design tokens for the current color scheme.
+ * Returns the design tokens for the app.
  *
- * Reads from ThemeContext (manual toggle, persisted via AsyncStorage).
- * Falls back to the light palette by default.
+ * The app uses a single fixed light palette (no dark mode).
  */
 export function useColors() {
-  const { isDark } = useTheme();
-  const palette = isDark
-    ? (colors as typeof colors & { dark: typeof colors.light }).dark
-    : colors.light;
-  return { ...palette, radius: colors.radius };
+  return colors;
 }
