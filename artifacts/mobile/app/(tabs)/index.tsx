@@ -4,8 +4,6 @@ import { router } from "expo-router";
 import {
   Clock,
   Crown,
-  Dice3,
-  Dice5,
   ListChecks,
   Plus,
   Shuffle,
@@ -186,15 +184,15 @@ export default function HomeScreen() {
 
       {/* Header section */}
       <View style={[styles.header, { paddingTop: topPad + 16 }]}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerTextCol}>
-            <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
-              {getGreeting()} 👋
-            </Text>
-            <Image source={logoSource} style={styles.logo} resizeMode="contain" />
-          </View>
+        <View style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.headerTop}>
+            <View style={styles.headerTextCol}>
+              <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
+                {getGreeting()} 👋
+              </Text>
+              <Image source={logoSource} style={styles.logo} resizeMode="contain" />
+            </View>
 
-          <View style={styles.headerRightCol}>
             <TouchableOpacity
               onPress={() => router.push("/paywall")}
               style={[
@@ -204,40 +202,33 @@ export default function HomeScreen() {
             >
               <Crown size={16} color={colors.primary} />
             </TouchableOpacity>
-
-            <View style={styles.diceDeco} pointerEvents="none">
-              <Sparkles size={10} color={colors.primary + "80"} style={styles.sparkleTop} />
-              <Sparkles size={7} color={colors.primary + "60"} style={styles.sparkleSmall} />
-              <Dice5 size={40} color={colors.primary} style={styles.diceBack} />
-              <Dice3 size={34} color={colors.primary} style={styles.diceFront} />
-            </View>
-          </View>
-        </View>
-
-        <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.statItem}>
-            <View style={[styles.statIconWrap, { backgroundColor: colors.secondary }]}>
-              <ListChecks size={14} color={colors.primary} />
-            </View>
-            <View>
-              <Text style={[styles.statValue, { color: colors.foreground }]}>{lists.length}</Text>
-              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
-                List{lists.length !== 1 ? "s" : ""}
-              </Text>
-            </View>
           </View>
 
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-
-          <View style={styles.statItem}>
-            <View style={[styles.statIconWrap, { backgroundColor: colors.secondary }]}>
-              <Dice3 size={14} color={colors.primary} />
+          <View style={[styles.statsRow, { backgroundColor: colors.secondary + "80" }]}>
+            <View style={styles.statItem}>
+              <View style={[styles.statIconWrap, { backgroundColor: colors.card }]}>
+                <ListChecks size={14} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={[styles.statValue, { color: colors.foreground }]}>{lists.length}</Text>
+                <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
+                  List{lists.length !== 1 ? "s" : ""}
+                </Text>
+              </View>
             </View>
-            <View>
-              <Text style={[styles.statValue, { color: colors.foreground }]}>{totalChoices}</Text>
-              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
-                Total choices
-              </Text>
+
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+
+            <View style={styles.statItem}>
+              <View style={[styles.statIconWrap, { backgroundColor: colors.card }]}>
+                <Sparkles size={14} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={[styles.statValue, { color: colors.foreground }]}>{totalChoices}</Text>
+                <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
+                  Total choices
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -308,7 +299,17 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingBottom: 20,
+  },
+  headerCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 20,
     gap: 16,
+    shadowColor: "#7B5EF6",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 2,
   },
   headerTop: {
     flexDirection: "row",
@@ -316,7 +317,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   headerTextCol: { flex: 1 },
-  headerRightCol: { alignItems: "flex-end", gap: 4 },
   greeting: { fontSize: 14, fontFamily: "Inter_500Medium", marginBottom: 6 },
   logo: { width: 148, height: 40 },
   crownBadge: {
@@ -327,30 +327,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
   },
-  diceDeco: {
-    width: 90,
-    height: 70,
-    marginTop: 6,
-  },
-  diceBack: {
-    position: "absolute",
-    top: 0,
-    right: 30,
-    transform: [{ rotate: "-18deg" }],
-  },
-  diceFront: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    transform: [{ rotate: "14deg" }],
-  },
-  sparkleTop: { position: "absolute", top: 4, left: 8 },
-  sparkleSmall: { position: "absolute", top: 26, left: 0 },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 18,
-    borderWidth: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
