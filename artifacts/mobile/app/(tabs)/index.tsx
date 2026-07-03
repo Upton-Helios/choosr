@@ -1,12 +1,12 @@
+import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { List, Plus, Shuffle, Zap } from "lucide-react-native";
-import React, { useRef } from "react";
+import { Clock, ListChecks, Plus, Shuffle, Sparkles, Zap } from "lucide-react-native";
+import React, { useMemo, useRef } from "react";
 import {
   Alert,
   Animated,
   FlatList,
-  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -16,14 +16,20 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const logoSource = require("@/assets/images/choosr-logo.png");
-
+import { getCategoryForList } from "@/constants/categories";
 import {
   DecisionList,
   FREE_LIST_LIMIT,
   useLists,
 } from "@/context/ListsContext";
 import { useColors } from "@/hooks/useColors";
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 function ListCard({
   item,
@@ -38,12 +44,20 @@ function ListCard({
 }) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
+  const shuffleScale = useRef(new Animated.Value(1)).current;
+  const category = useMemo(() => getCategoryForList(item.name), [item.name]);
 
   function handlePressIn() {
     Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 30 }).start();
   }
   function handlePressOut() {
     Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30 }).start();
+  }
+  function handleShufflePressIn() {
+    Animated.spring(shuffleScale, { toValue: 0.92, useNativeDriver: true, speed: 30 }).start();
+  }
+  function handleShufflePressOut() {
+    Animated.spring(shuffleScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 10 }).start();
   }
   function handleLongPress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -54,6 +68,8 @@ function ListCard({
     ]);
   }
 
+  const dotCount = Math.min(item.options.length, 6);
+
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
@@ -63,22 +79,58 @@ function ListCard({
         onPressOut={handlePressOut}
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
-        <View style={styles.cardLeft}>
-          <View style={[styles.iconWrap, { backgroundColor: colors.primary + "18" }]}>
-            <List size={20} color={colors.primary} />
+        <View style={styles.cardTop}>
+          <View style={[styles.iconWrap, { backgroundColor: category.color + "20" }]}>
+            <Text style={styles.iconEmoji}>{category.emoji}</Text>
           </View>
           <View style={styles.cardText}>
             <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
               {item.name}
             </Text>
-            <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
-              {item.options.length} option{item.options.length !== 1 ? "s" : ""}
-              {item.lastPick ? ` · Last: ${item.lastPick}` : ""}
-            </Text>
+            <View style={styles.cardMetaRow}>
+              <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+                {item.options.length} choice{item.options.length !== 1 ? "s" : ""}
+              </Text>
+              <View style={styles.dotsRow}>
+                {Array.from({ length: dotCount }).map((_, i) => (
+                  <View key={i} style={[styles.dot, { backgroundColor: category.color }]} />
+                ))}
+              </View>
+            </View>
           </View>
         </View>
-        <View style={[styles.shuffleBtn, { backgroundColor: colors.primary }]}>
-          <Shuffle size={18} color="#fff" />
+
+        <View style={[styles.cardDivider, { backgroundColor: colors.border }]} />
+
+        <View style={styles.cardBottom}>
+          {item.lastPick ? (
+            <View style={styles.lastPickRow}>
+              <View style={[styles.clockWrap, { backgroundColor: colors.secondary }]}>
+                <Clock size={13} color={colors.mutedForeground} />
+              </View>
+              <View>
+                <Text style={[styles.lastPickLabel, { color: colors.mutedForeground }]}>Last Pick</Text>
+                <Text style={[styles.lastPickValue, { color: colors.foreground }]} numberOfLines={1}>
+                  {item.lastPick}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <Text style={[styles.noPickYet, { color: colors.mutedForeground }]}>Not shuffled yet</Text>
+          )}
+
+          <Animated.View style={{ transform: [{ scale: shuffleScale }] }}>
+            <TouchableOpacity
+              onPress={onPress}
+              onPressIn={handleShufflePressIn}
+              onPressOut={handleShufflePressOut}
+              activeOpacity={0.9}
+              style={[styles.shuffleBtn, { backgroundColor: colors.primary }]}
+            >
+              <Shuffle size={16} color="#fff" />
+              <Text style={styles.shuffleBtnText}>Shuffle</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </Pressable>
     </Animated.View>
@@ -92,6 +144,11 @@ export default function HomeScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
+
+  const totalChoices = useMemo(
+    () => lists.reduce((sum, l) => sum + l.options.length, 0),
+    [lists]
+  );
 
   function handleNewList() {
     if (!isPremium && lists.length >= FREE_LIST_LIMIT) {
@@ -110,22 +167,21 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={["#EFEBFF", "#F8F7FF", "#F8F7FF"]}
+        style={StyleSheet.absoluteFill}
+      />
+
       {/* Header section */}
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: topPad + 16,
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
-          },
-        ]}
-      >
+      <View style={[styles.header, { paddingTop: topPad + 16 }]}>
         <View style={styles.headerTop}>
-          <View style={styles.logoWrap}>
-            <Image source={logoSource} style={styles.logo} resizeMode="contain" />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
+              {getGreeting()} 👋
+            </Text>
+            <Text style={[styles.title, { color: colors.foreground }]}>Choosr</Text>
           </View>
-          {!isPremium && (
+          {!isPremium ? (
             <TouchableOpacity
               onPress={() => router.push("/paywall")}
               style={[
@@ -136,40 +192,81 @@ export default function HomeScreen() {
               <Zap size={12} color={colors.accent} />
               <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
             </TouchableOpacity>
+          ) : (
+            <View style={styles.diceDeco}>
+              <Text style={styles.diceDecoEmoji}>🎲</Text>
+            </View>
           )}
         </View>
-        <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-          {lists.length === 0
-            ? "No lists yet"
-            : `${lists.length} list${lists.length !== 1 ? "s" : ""}`}
-        </Text>
+
+        <View style={styles.statsRow}>
+          <View style={[styles.statPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: colors.secondary }]}>
+              <ListChecks size={14} color={colors.primary} />
+            </View>
+            <Text style={[styles.statValue, { color: colors.foreground }]}>{lists.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
+              List{lists.length !== 1 ? "s" : ""}
+            </Text>
+          </View>
+          <View style={[styles.statPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: colors.secondary }]}>
+              <Sparkles size={14} color={colors.primary} />
+            </View>
+            <Text style={[styles.statValue, { color: colors.foreground }]}>{totalChoices}</Text>
+            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
+              Total choice{totalChoices !== 1 ? "s" : ""}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {lists.length === 0 ? (
         <View style={styles.empty}>
           <View style={[styles.emptyIcon, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Shuffle size={40} color={colors.primary} />
+            <Text style={styles.emptyIconEmoji}>🎲</Text>
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No decision lists yet</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Let's make your first list</Text>
           <Text style={[styles.emptyDesc, { color: colors.mutedForeground }]}>
-            Create your first list and let fate decide for you.
+            Food, movie night, baby names, date ideas — add your options and let Choosr decide.
           </Text>
+          <TouchableOpacity
+            onPress={handleNewList}
+            activeOpacity={0.85}
+            style={[styles.emptyCta, { backgroundColor: colors.primary }]}
+          >
+            <Plus size={18} color="#fff" />
+            <Text style={styles.emptyCtaText}>Create List</Text>
+          </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
-          data={lists}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.list, { paddingBottom: bottomPad + 100 }]}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <ListCard
-              item={item}
-              onPress={() => router.push({ pathname: "/result", params: { listId: item.id } })}
-              onEdit={() => router.push({ pathname: "/editor", params: { listId: item.id } })}
-              onDelete={() => handleDelete(item.id)}
-            />
-          )}
-        />
+        <>
+          <View style={styles.listHeaderRow}>
+            <Text style={[styles.listHeaderTitle, { color: colors.foreground }]}>Your Lists</Text>
+            <TouchableOpacity
+              onPress={handleNewList}
+              style={[styles.newListPill, { backgroundColor: colors.secondary }]}
+              activeOpacity={0.8}
+            >
+              <Plus size={14} color={colors.primary} />
+              <Text style={[styles.newListPillText, { color: colors.primary }]}>New List</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={lists}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[styles.list, { paddingBottom: bottomPad + 100 }]}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <ListCard
+                item={item}
+                onPress={() => router.push({ pathname: "/result", params: { listId: item.id } })}
+                onEdit={() => router.push({ pathname: "/editor", params: { listId: item.id } })}
+                onDelete={() => handleDelete(item.id)}
+              />
+            )}
+          />
+        </>
       )}
 
       {/* FAB */}
@@ -188,28 +285,24 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 18,
-    borderBottomWidth: 1,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    gap: 8,
+    paddingBottom: 20,
+    gap: 16,
   },
   headerTop: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
   },
-  logoWrap: {
-    borderRadius: 12,
-    paddingVertical: 4,
-  },
-  logo: { width: 118, height: 34 },
-  headerSub: { fontSize: 13, fontFamily: "Inter_400Regular" },
-  headerActions: {
-    flexDirection: "row",
+  greeting: { fontSize: 14, fontFamily: "Inter_500Medium", marginBottom: 2 },
+  title: { fontSize: 40, fontFamily: "NowAlt_900Black", letterSpacing: 0.2 },
+  diceDeco: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
     alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
   },
+  diceDecoEmoji: { fontSize: 30 },
   premiumBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -218,42 +311,112 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
+    marginTop: 4,
   },
   premiumText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  list: { paddingHorizontal: 16, paddingTop: 8, gap: 10 },
-  card: {
+  statsRow: { flexDirection: "row", gap: 10 },
+  statPill: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 16,
     borderWidth: 1,
   },
-  cardLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-  iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  cardText: { flex: 1 },
-  cardTitle: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
-  cardSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
-  shuffleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+  statIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
   },
+  statValue: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  statLabel: { fontSize: 12, fontFamily: "Inter_400Regular", flexShrink: 1 },
+  listHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 12,
+  },
+  listHeaderTitle: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  newListPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+  },
+  newListPillText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  list: { paddingHorizontal: 16, paddingTop: 4, gap: 12 },
+  card: {
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 12,
+  },
+  cardTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  iconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  iconEmoji: { fontSize: 24 },
+  cardText: { flex: 1, gap: 4 },
+  cardTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
+  cardMetaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  cardSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  dotsRow: { flexDirection: "row", gap: 3 },
+  dot: { width: 5, height: 5, borderRadius: 2.5 },
+  cardDivider: { height: 1, width: "100%" },
+  cardBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  lastPickRow: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  clockWrap: { width: 28, height: 28, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  lastPickLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  lastPickValue: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  noPickYet: { fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+  shuffleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    shadowColor: "#7B5EF6",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  shuffleBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 13 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 40, gap: 12 },
   emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+    width: 88,
+    height: 88,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
     borderWidth: 1,
   },
+  emptyIconEmoji: { fontSize: 42 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "center" },
   emptyDesc: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
+  emptyCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginTop: 8,
+    shadowColor: "#7B5EF6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  emptyCtaText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 },
   fab: {
     position: "absolute",
     right: 24,
