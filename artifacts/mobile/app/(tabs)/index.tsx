@@ -182,8 +182,11 @@ export default function HomeScreen() {
         style={StyleSheet.absoluteFill}
       />
 
+      {/* Status bar backdrop */}
+      <View style={[styles.statusBarBg, { height: topPad, backgroundColor: colors.primary }]} />
+
       {/* Header section */}
-      <View style={[styles.header, { paddingTop: topPad + 16 }]}>
+      <View style={styles.header}>
         <View style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.headerTop}>
             <View style={styles.headerTextCol}>
@@ -296,14 +299,19 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  statusBarBg: {
+    width: "100%",
+  },
   header: {
-    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   headerCard: {
-    borderRadius: 24,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     borderWidth: 1,
+    borderTopWidth: 0,
     padding: 20,
+    paddingTop: 24,
     gap: 16,
     shadowColor: "#7B5EF6",
     shadowOffset: { width: 0, height: 6 },
