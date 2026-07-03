@@ -112,7 +112,7 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <View>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Choosr</Text>
+          <Text style={[styles.headerTitle, { color: colors.primary }]}>Choosr</Text>
           <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
             {lists.length === 0
               ? "No lists yet"
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-between",
   },
-  headerTitle: { fontSize: 34, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  headerTitle: { fontSize: 40, fontFamily: "Fredoka_700Bold", letterSpacing: 0.3 },
   headerSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
   headerActions: {
     flexDirection: "row",
