@@ -1,6 +1,6 @@
 kind = "mobile"
 previewPath = "/"
-title = "Decision Randomizer"
+title = "Choosr"
 version = "1.0.0"
 id = "artifacts/mobile"
 router = "expo-domain"

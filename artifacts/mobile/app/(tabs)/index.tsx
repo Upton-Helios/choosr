@@ -112,7 +112,7 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <View>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Decide</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Choosr</Text>
           <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
             {lists.length === 0
               ? "No lists yet"
