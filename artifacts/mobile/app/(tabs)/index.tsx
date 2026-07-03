@@ -7,6 +7,7 @@ import {
   Alert,
   Animated,
   FlatList,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -15,6 +16,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const logoSource = require("@/assets/images/choosr-logo-new.png");
 
 import { getCategoryForList } from "@/constants/categories";
 import {
@@ -179,7 +182,7 @@ export default function HomeScreen() {
             <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
               {getGreeting()} 👋
             </Text>
-            <Text style={[styles.title, { color: colors.foreground }]}>Choosr</Text>
+            <Image source={logoSource} style={styles.logo} resizeMode="contain" />
           </View>
           {!isPremium ? (
             <TouchableOpacity
@@ -294,7 +297,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   greeting: { fontSize: 14, fontFamily: "Inter_500Medium", marginBottom: 2 },
-  title: { fontSize: 40, fontFamily: "NowAlt_900Black", letterSpacing: 0.2 },
+  logo: { width: 148, height: 40 },
   diceDeco: {
     width: 44,
     height: 44,
