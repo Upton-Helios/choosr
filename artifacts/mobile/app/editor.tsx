@@ -14,16 +14,17 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useLists } from "@/context/ListsContext";
+import { ListMode, useLists } from "@/context/ListsContext";
 import { useColors } from "@/hooks/useColors";
 
 export default function EditorScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { listId } = useLocalSearchParams<{ listId?: string }>();
+  const { listId, mode: modeParam } = useLocalSearchParams<{ listId?: string; mode?: ListMode }>();
   const { lists, addList, updateList } = useLists();
 
   const existing = listId ? lists.find((l) => l.id === listId) : undefined;
+  const mode: ListMode = existing?.mode ?? modeParam ?? "shuffle";
 
   const [name, setName] = useState(existing?.name ?? "");
   const [options, setOptions] = useState<string[]>(existing?.options ?? []);
@@ -59,9 +60,9 @@ export default function EditorScreen() {
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (isEdit) {
-      updateList(listId!, name.trim(), options);
+      updateList(listId!, name.trim(), options, mode);
     } else {
-      addList(name.trim(), options);
+      addList(name.trim(), options, mode);
     }
     router.back();
   }
@@ -74,9 +75,16 @@ export default function EditorScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <X size={22} color={colors.mutedForeground} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-          {isEdit ? "Edit List" : "New List"}
-        </Text>
+        <View style={styles.headerTitleWrap}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>
+            {isEdit ? "Edit List" : "New List"}
+          </Text>
+          <View style={[styles.modeBadge, { backgroundColor: colors.secondary }]}>
+            <Text style={[styles.modeBadgeText, { color: colors.mutedForeground }]}>
+              {mode === "wheel" ? "Spin Wheel" : "Shuffle"}
+            </Text>
+          </View>
+        </View>
         <TouchableOpacity onPress={handleSave} style={[styles.saveBtn, { backgroundColor: colors.primary }]}>
           <Text style={styles.saveBtnText}>Save</Text>
         </TouchableOpacity>
@@ -172,7 +180,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerTitleWrap: { flex: 1, alignItems: "center", gap: 4 },
   headerTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold" },
+  modeBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
+  modeBadgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.3 },
   saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
   saveBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
   content: { padding: 20, gap: 24 },

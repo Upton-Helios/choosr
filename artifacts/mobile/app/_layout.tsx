@@ -40,10 +40,18 @@ function RootLayoutNav() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
+        name="mode-select"
+        options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }}
+      />
+      <Stack.Screen
         name="editor"
         options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }}
       />
       <Stack.Screen name="result" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="dice"
+        options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }}
+      />
       <Stack.Screen
         name="paywall"
         options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }}

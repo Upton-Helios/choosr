@@ -18,11 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const logoSource = require("@/assets/images/choosr-logo.png");
 
-import {
-  DecisionList,
-  FREE_LIST_LIMIT,
-  useLists,
-} from "@/context/ListsContext";
+import { DecisionList, useLists } from "@/context/ListsContext";
 import { useColors } from "@/hooks/useColors";
 
 function ListCard({
@@ -94,11 +90,7 @@ export default function HomeScreen() {
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   function handleNewList() {
-    if (!isPremium && lists.length >= FREE_LIST_LIMIT) {
-      router.push("/paywall");
-      return;
-    }
-    router.push("/editor");
+    router.push("/mode-select");
   }
 
   function handleDelete(id: string) {

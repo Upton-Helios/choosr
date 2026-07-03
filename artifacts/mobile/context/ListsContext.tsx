@@ -7,10 +7,13 @@ import React, {
   useState,
 } from "react";
 
+export type ListMode = "shuffle" | "wheel";
+
 export interface DecisionList {
   id: string;
   name: string;
   options: string[];
+  mode: ListMode;
   lastPick?: string;
   createdAt: number;
 }
@@ -19,8 +22,8 @@ interface ListsContextValue {
   lists: DecisionList[];
   isPremium: boolean;
   isLoaded: boolean;
-  addList: (name: string, options: string[]) => DecisionList;
-  updateList: (id: string, name: string, options: string[]) => void;
+  addList: (name: string, options: string[], mode: ListMode) => DecisionList;
+  updateList: (id: string, name: string, options: string[], mode: ListMode) => void;
   deleteList: (id: string) => void;
   updateLastPick: (id: string, pick: string) => void;
   unlockPremium: () => void;
@@ -48,7 +51,10 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
           AsyncStorage.getItem(LISTS_KEY),
           AsyncStorage.getItem(PREMIUM_KEY),
         ]);
-        if (listsJson) setLists(JSON.parse(listsJson));
+        if (listsJson) {
+          const parsed: DecisionList[] = JSON.parse(listsJson);
+          setLists(parsed.map((l) => ({ ...l, mode: l.mode ?? "shuffle" })));
+        }
         if (premiumVal === "true") setIsPremium(true);
       } catch {}
       setIsLoaded(true);
@@ -61,11 +67,12 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addList = useCallback(
-    (name: string, options: string[]): DecisionList => {
+    (name: string, options: string[], mode: ListMode): DecisionList => {
       const newList: DecisionList = {
         id: generateId(),
         name,
         options,
+        mode,
         createdAt: Date.now(),
       };
       setLists((prev) => {
@@ -79,10 +86,10 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateList = useCallback(
-    (id: string, name: string, options: string[]) => {
+    (id: string, name: string, options: string[], mode: ListMode) => {
       setLists((prev) => {
         const updated = prev.map((l) =>
-          l.id === id ? { ...l, name, options } : l
+          l.id === id ? { ...l, name, options, mode } : l
         );
         saveLists(updated);
         return updated;

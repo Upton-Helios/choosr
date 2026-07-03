@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { SpinWheel } from "@/components/SpinWheel";
 import { useLists } from "@/context/ListsContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -40,9 +41,12 @@ export default function ResultScreen() {
 
   const list = lists.find((l) => l.id === listId);
 
+  const isWheel = list?.mode === "wheel";
+
   const [phase, setPhase] = useState<Phase>("idle");
   const [displayed, setDisplayed] = useState<string>("");
   const [winner, setWinner] = useState<string>("");
+  const [wheelTargetIndex, setWheelTargetIndex] = useState<number | null>(null);
 
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -94,11 +98,30 @@ export default function ResultScreen() {
     });
   }, [list, listId, updateLastPick]);
 
+  const runWheel = useCallback(() => {
+    if (!list || list.options.length < 2) return;
+    setPhase("spinning");
+    const idx = Math.floor(Math.random() * list.options.length);
+    setWheelTargetIndex(idx);
+  }, [list]);
+
+  function handleWheelSpinEnd() {
+    if (!list || wheelTargetIndex === null) return;
+    const pick = list.options[wheelTargetIndex];
+    setWinner(pick);
+    setPhase("reveal");
+    updateLastPick(listId, pick);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }
+
+  const runPick = isWheel ? runWheel : runShuffle;
+
   useEffect(() => {
     if (list && phase === "idle") {
-      const t = setTimeout(runShuffle, 300);
+      const t = setTimeout(runPick, 300);
       return () => clearTimeout(t);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { return () => clearTimeouts(); }, []);
@@ -138,47 +161,75 @@ export default function ResultScreen() {
       </View>
 
       <View style={styles.revealArea}>
-        <Animated.View
-          style={[
-            styles.resultCard,
-            {
-              backgroundColor: colors.card,
-              borderColor: phase === "reveal" ? colors.primary : colors.border,
-              transform: [{ scale: scaleAnim }],
-              shadowColor: phase === "reveal" ? colors.primary : "transparent",
-              shadowOpacity: phase === "reveal" ? 0.5 : 0,
-              shadowRadius: 24,
-              shadowOffset: { width: 0, height: 0 },
-              elevation: phase === "reveal" ? 12 : 0,
-            },
-          ]}
-        >
-          {phase === "idle" ? (
-            <Text style={[styles.idleText, { color: colors.mutedForeground }]}>Getting ready...</Text>
-          ) : (
-            <Text
+        {isWheel ? (
+          <>
+            <SpinWheel
+              options={list.options}
+              spinning={phase === "spinning"}
+              targetIndex={wheelTargetIndex}
+              onSpinEnd={handleWheelSpinEnd}
+            />
+            {phase === "reveal" && (
+              <View style={[styles.wheelWinnerCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+                <Text style={[styles.wheelWinnerText, { color: colors.foreground }]} numberOfLines={2} adjustsFontSizeToFit>
+                  {winner}
+                </Text>
+              </View>
+            )}
+            {phase === "reveal" && (
+              <View style={styles.winnerLabel}>
+                <View style={[styles.winnerBadge, { backgroundColor: colors.success + "22" }]}>
+                  <CheckCircle size={14} color={colors.success as string} />
+                  <Text style={[styles.winnerBadgeText, { color: colors.success as string }]}>The Pick</Text>
+                </View>
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            <Animated.View
               style={[
-                styles.resultText,
+                styles.resultCard,
                 {
-                  color: phase === "reveal" ? colors.foreground : colors.mutedForeground,
-                  fontFamily: phase === "reveal" ? "Inter_700Bold" : "Inter_400Regular",
+                  backgroundColor: colors.card,
+                  borderColor: phase === "reveal" ? colors.primary : colors.border,
+                  transform: [{ scale: scaleAnim }],
+                  shadowColor: phase === "reveal" ? colors.primary : "transparent",
+                  shadowOpacity: phase === "reveal" ? 0.5 : 0,
+                  shadowRadius: 24,
+                  shadowOffset: { width: 0, height: 0 },
+                  elevation: phase === "reveal" ? 12 : 0,
                 },
               ]}
-              numberOfLines={3}
-              adjustsFontSizeToFit
             >
-              {displayed}
-            </Text>
-          )}
-        </Animated.View>
+              {phase === "idle" ? (
+                <Text style={[styles.idleText, { color: colors.mutedForeground }]}>Getting ready...</Text>
+              ) : (
+                <Text
+                  style={[
+                    styles.resultText,
+                    {
+                      color: phase === "reveal" ? colors.foreground : colors.mutedForeground,
+                      fontFamily: phase === "reveal" ? "Inter_700Bold" : "Inter_400Regular",
+                    },
+                  ]}
+                  numberOfLines={3}
+                  adjustsFontSizeToFit
+                >
+                  {displayed}
+                </Text>
+              )}
+            </Animated.View>
 
-        {phase === "reveal" && (
-          <View style={styles.winnerLabel}>
-            <View style={[styles.winnerBadge, { backgroundColor: colors.success + "22" }]}>
-              <CheckCircle size={14} color={colors.success as string} />
-              <Text style={[styles.winnerBadgeText, { color: colors.success as string }]}>The Pick</Text>
-            </View>
-          </View>
+            {phase === "reveal" && (
+              <View style={styles.winnerLabel}>
+                <View style={[styles.winnerBadge, { backgroundColor: colors.success + "22" }]}>
+                  <CheckCircle size={14} color={colors.success as string} />
+                  <Text style={[styles.winnerBadgeText, { color: colors.success as string }]}>The Pick</Text>
+                </View>
+              </View>
+            )}
+          </>
         )}
       </View>
 
@@ -189,12 +240,12 @@ export default function ResultScreen() {
       <View style={[styles.actions, { paddingBottom: bottomPad + 24 }]}>
         <TouchableOpacity
           style={[styles.reshuffleBtn, { backgroundColor: colors.primary }]}
-          onPress={runShuffle}
+          onPress={runPick}
           disabled={phase === "spinning"}
           activeOpacity={0.85}
         >
           <Shuffle size={20} color="#fff" />
-          <Text style={styles.reshuffleBtnText}>Shuffle Again</Text>
+          <Text style={styles.reshuffleBtnText}>{isWheel ? "Spin Again" : "Shuffle Again"}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -239,7 +290,9 @@ const styles = StyleSheet.create({
   resultCard: { width: "100%", minHeight: 180, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", padding: 32 },
   idleText: { fontSize: 18, fontFamily: "Inter_400Regular" },
   resultText: { fontSize: 36, textAlign: "center", lineHeight: 44 },
-  winnerLabel: { alignItems: "center" },
+  wheelWinnerCard: { marginTop: 24, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 20, borderWidth: 2, minWidth: "80%", alignItems: "center" },
+  wheelWinnerText: { fontSize: 22, fontFamily: "Inter_700Bold", textAlign: "center" },
+  winnerLabel: { alignItems: "center", marginTop: 10 },
   winnerBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
   winnerBadgeText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   optionsHint: { fontSize: 12, fontFamily: "Inter_400Regular", marginBottom: 24 },

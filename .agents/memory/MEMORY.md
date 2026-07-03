@@ -1,0 +1,1 @@
+- [Expo web preview screenshot quirk](expo-screenshot-quirk.md) — screenshot tool returns blank for this artifact's Expo web preview even when app renders fine; trust logs instead.
