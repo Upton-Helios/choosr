@@ -53,7 +53,7 @@ export default function PaywallScreen() {
 
         <Text style={[styles.title, { color: colors.foreground }]}>Unlock Unlimited</Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          You've reached the 3-list limit on the free plan. Upgrade to keep creating.
+          You've reached the 1-list limit on the free plan. Upgrade to keep creating.
         </Text>
 
         <View style={[styles.featureList, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -76,7 +76,7 @@ export default function PaywallScreen() {
 
         <View style={styles.spacer} />
 
-        <Text style={[styles.price, { color: colors.foreground }]}>$2.99</Text>
+        <Text style={[styles.price, { color: colors.foreground }]}>$0.99</Text>
         <Text style={[styles.priceNote, { color: colors.mutedForeground }]}>
           One-time purchase · No subscription
         </Text>

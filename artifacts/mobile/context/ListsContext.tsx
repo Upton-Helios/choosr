@@ -30,7 +30,7 @@ const ListsContext = createContext<ListsContextValue | null>(null);
 
 const LISTS_KEY = "@decision_randomizer/lists";
 const PREMIUM_KEY = "@decision_randomizer/premium";
-export const FREE_LIST_LIMIT = 3;
+export const FREE_LIST_LIMIT = 1;
 
 function generateId(): string {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9);
