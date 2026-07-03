@@ -123,16 +123,18 @@ export default function ResultScreen() {
           },
         ]}
       >
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => { clearTimeouts(); router.back(); }}
-        >
-          <ArrowLeft size={22} color={colors.mutedForeground} />
-        </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => { clearTimeouts(); router.back(); }}
+          >
+            <ArrowLeft size={22} color={colors.mutedForeground} />
+          </TouchableOpacity>
 
-        <Text style={[styles.listName, { color: colors.foreground }]}>
-          &ldquo;{list.name}&rdquo;
-        </Text>
+          <Text style={[styles.listName, { color: colors.foreground }]}>
+            &ldquo;{list.name}&rdquo;
+          </Text>
+        </View>
       </View>
 
       <View style={styles.revealArea}>
@@ -216,9 +218,22 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     alignItems: "center",
-    gap: 8,
   },
-  backBtn: { alignSelf: "flex-start", width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  backBtn: {
+    position: "absolute",
+    left: 0,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
   listName: { fontSize: 46, fontFamily: "NowAlt_900Black", letterSpacing: 0.2, textAlign: "center" },
   revealArea: { flex: 1, alignItems: "center", justifyContent: "center", width: "100%", paddingHorizontal: 32, gap: 16 },
   resultCard: { width: "100%", minHeight: 180, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", padding: 32 },
