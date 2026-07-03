@@ -122,7 +122,7 @@ export default function ResultScreen() {
 
       <View style={styles.revealArea}>
         <Text style={[styles.listName, { color: colors.foreground }]}>
-          {list.name}
+          &ldquo;{list.name}&rdquo;
         </Text>
 
         <Animated.View
@@ -198,7 +198,7 @@ export default function ResultScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center" },
   backBtn: { position: "absolute", left: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center", zIndex: 10 },
-  listName: { fontSize: 46, fontFamily: "Now_700Bold", letterSpacing: 0.2, textAlign: "center" },
+  listName: { fontSize: 46, fontFamily: "NowAlt_900Black", letterSpacing: 0.2, textAlign: "center", marginTop: -20 },
   revealArea: { flex: 1, alignItems: "center", justifyContent: "center", width: "100%", paddingHorizontal: 32, gap: 16 },
   resultCard: { width: "100%", minHeight: 180, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", padding: 32 },
   idleText: { fontSize: 18, fontFamily: "Inter_400Regular" },

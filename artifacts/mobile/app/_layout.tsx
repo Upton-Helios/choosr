@@ -26,6 +26,7 @@ const Now_400Regular = require("@/assets/fonts/Now-Regular.otf");
 const Now_500Medium = require("@/assets/fonts/Now-Medium.otf");
 const Now_600SemiBold = require("@/assets/fonts/Now-SemiBold.otf");
 const Now_700Bold = require("@/assets/fonts/Now-Bold.otf");
+const NowAlt_900Black = require("@/assets/fonts/NowAlt-Black.otf");
 
 function RootLayoutNav() {
   const colors = useColors();
@@ -67,6 +68,7 @@ export default function RootLayout() {
     Now_500Medium,
     Now_600SemiBold,
     Now_700Bold,
+    NowAlt_900Black,
   });
 
   useEffect(() => {
