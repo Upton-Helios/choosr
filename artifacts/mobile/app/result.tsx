@@ -120,7 +120,7 @@ export default function ResultScreen() {
         <ArrowLeft size={22} color={colors.mutedForeground} />
       </TouchableOpacity>
 
-      <Text style={[styles.listName, { color: colors.mutedForeground, marginTop: topPad + 56 }]}>
+      <Text style={[styles.listName, { color: colors.foreground, marginTop: topPad + 56 }]}>
         {list.name}
       </Text>
 
@@ -198,7 +198,7 @@ export default function ResultScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center" },
   backBtn: { position: "absolute", left: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center", zIndex: 10 },
-  listName: { fontSize: 13, fontFamily: "Inter_500Medium", letterSpacing: 0.3, marginBottom: 8 },
+  listName: { fontSize: 26, fontFamily: "Now_700Bold", letterSpacing: 0.2, marginBottom: 8, textAlign: "center" },
   revealArea: { flex: 1, alignItems: "center", justifyContent: "center", width: "100%", paddingHorizontal: 32, gap: 16 },
   resultCard: { width: "100%", minHeight: 180, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", padding: 32 },
   idleText: { fontSize: 18, fontFamily: "Inter_400Regular" },

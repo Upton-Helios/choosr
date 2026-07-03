@@ -22,6 +22,11 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
+const Now_400Regular = require("@/assets/fonts/Now-Regular.otf");
+const Now_500Medium = require("@/assets/fonts/Now-Medium.otf");
+const Now_600SemiBold = require("@/assets/fonts/Now-SemiBold.otf");
+const Now_700Bold = require("@/assets/fonts/Now-Bold.otf");
+
 function RootLayoutNav() {
   const colors = useColors();
   return (
@@ -58,6 +63,10 @@ export default function RootLayout() {
     Inter_700Bold,
     Fredoka_600SemiBold,
     Fredoka_700Bold,
+    Now_400Regular,
+    Now_500Medium,
+    Now_600SemiBold,
+    Now_700Bold,
   });
 
   useEffect(() => {
