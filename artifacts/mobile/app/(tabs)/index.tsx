@@ -1,7 +1,16 @@
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { Clock, ListChecks, Plus, Shuffle, Sparkles, Zap } from "lucide-react-native";
+import {
+  Clock,
+  Crown,
+  Dice3,
+  Dice5,
+  ListChecks,
+  Plus,
+  Shuffle,
+  Sparkles,
+} from "lucide-react-native";
 import React, { useMemo, useRef } from "react";
 import {
   Alert,
@@ -178,48 +187,58 @@ export default function HomeScreen() {
       {/* Header section */}
       <View style={[styles.header, { paddingTop: topPad + 16 }]}>
         <View style={styles.headerTop}>
-          <View style={{ flex: 1 }}>
+          <View style={styles.headerTextCol}>
             <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
               {getGreeting()} 👋
             </Text>
             <Image source={logoSource} style={styles.logo} resizeMode="contain" />
           </View>
-          {!isPremium ? (
+
+          <View style={styles.headerRightCol}>
             <TouchableOpacity
               onPress={() => router.push("/paywall")}
               style={[
-                styles.premiumBadge,
-                { backgroundColor: colors.accent + "18", borderColor: colors.accent + "44" },
+                styles.crownBadge,
+                { backgroundColor: colors.primary + "18", borderColor: colors.primary + "33" },
               ]}
             >
-              <Zap size={12} color={colors.accent} />
-              <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
+              <Crown size={16} color={colors.primary} />
             </TouchableOpacity>
-          ) : (
-            <View style={styles.diceDeco}>
-              <Text style={styles.diceDecoEmoji}>🎲</Text>
+
+            <View style={styles.diceDeco} pointerEvents="none">
+              <Sparkles size={10} color={colors.primary + "80"} style={styles.sparkleTop} />
+              <Sparkles size={7} color={colors.primary + "60"} style={styles.sparkleSmall} />
+              <Dice5 size={40} color={colors.primary} style={styles.diceBack} />
+              <Dice3 size={34} color={colors.primary} style={styles.diceFront} />
             </View>
-          )}
+          </View>
         </View>
 
-        <View style={styles.statsRow}>
-          <View style={[styles.statPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.statItem}>
             <View style={[styles.statIconWrap, { backgroundColor: colors.secondary }]}>
               <ListChecks size={14} color={colors.primary} />
             </View>
-            <Text style={[styles.statValue, { color: colors.foreground }]}>{lists.length}</Text>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
-              List{lists.length !== 1 ? "s" : ""}
-            </Text>
-          </View>
-          <View style={[styles.statPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.statIconWrap, { backgroundColor: colors.secondary }]}>
-              <Sparkles size={14} color={colors.primary} />
+            <View>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{lists.length}</Text>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
+                List{lists.length !== 1 ? "s" : ""}
+              </Text>
             </View>
-            <Text style={[styles.statValue, { color: colors.foreground }]}>{totalChoices}</Text>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
-              Total choice{totalChoices !== 1 ? "s" : ""}
-            </Text>
+          </View>
+
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.statItem}>
+            <View style={[styles.statIconWrap, { backgroundColor: colors.secondary }]}>
+              <Dice3 size={14} color={colors.primary} />
+            </View>
+            <View>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{totalChoices}</Text>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
+                Total choices
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -296,42 +315,51 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "space-between",
   },
-  greeting: { fontSize: 14, fontFamily: "Inter_500Medium", marginBottom: 2 },
+  headerTextCol: { flex: 1 },
+  headerRightCol: { alignItems: "flex-end", gap: 4 },
+  greeting: { fontSize: 14, fontFamily: "Inter_500Medium", marginBottom: 6 },
   logo: { width: 148, height: 40 },
-  diceDeco: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
+  crownBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-  },
-  diceDecoEmoji: { fontSize: 30 },
-  premiumBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginTop: 4,
-  },
-  premiumText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  statsRow: { flexDirection: "row", gap: 10 },
-  statPill: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 16,
     borderWidth: 1,
   },
+  diceDeco: {
+    width: 90,
+    height: 70,
+    marginTop: 6,
+  },
+  diceBack: {
+    position: "absolute",
+    top: 0,
+    right: 30,
+    transform: [{ rotate: "-18deg" }],
+  },
+  diceFront: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    transform: [{ rotate: "14deg" }],
+  },
+  sparkleTop: { position: "absolute", top: 4, left: 8 },
+  sparkleSmall: { position: "absolute", top: 26, left: 0 },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  statItem: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
+  statDivider: { width: 1, height: 32, marginHorizontal: 12 },
   statIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
