@@ -6,6 +6,7 @@ import {
   Alert,
   Animated,
   FlatList,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -14,6 +15,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const logoSource = require("@/assets/images/choosr-logo.png");
 
 import {
   DecisionList,
@@ -109,43 +112,59 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: topPad + 12 }]}>
-        <View>
-          <Text style={[styles.headerTitle, { color: colors.primary }]}>Choosr</Text>
-          <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-            {lists.length === 0
-              ? "No lists yet"
-              : `${lists.length} list${lists.length !== 1 ? "s" : ""}`}
-          </Text>
-        </View>
-        <View style={styles.headerActions}>
-          {!isPremium && (
-            <TouchableOpacity
-              onPress={() => router.push("/paywall")}
-              style={[
-                styles.premiumBadge,
-                { backgroundColor: colors.accent + "18", borderColor: colors.accent + "44" },
-              ]}
-            >
-              <Zap size={12} color={colors.accent} />
-              <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              toggleTheme();
-            }}
-            style={[styles.themeBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+      {/* Header section */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: topPad + 16,
+            backgroundColor: colors.card,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <View style={styles.headerTop}>
+          <View
+            style={[
+              styles.logoWrap,
+              isDark && { backgroundColor: "#FFFFFF" },
+            ]}
           >
-            {isDark ? (
-              <Sun size={18} color={colors.mutedForeground} />
-            ) : (
-              <Moon size={18} color={colors.mutedForeground} />
+            <Image source={logoSource} style={styles.logo} resizeMode="contain" />
+          </View>
+          <View style={styles.headerActions}>
+            {!isPremium && (
+              <TouchableOpacity
+                onPress={() => router.push("/paywall")}
+                style={[
+                  styles.premiumBadge,
+                  { backgroundColor: colors.accent + "18", borderColor: colors.accent + "44" },
+                ]}
+              >
+                <Zap size={12} color={colors.accent} />
+                <Text style={[styles.premiumText, { color: colors.accent }]}>Unlimited</Text>
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                toggleTheme();
+              }}
+              style={[styles.themeBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+            >
+              {isDark ? (
+                <Sun size={18} color={colors.mutedForeground} />
+              ) : (
+                <Moon size={18} color={colors.mutedForeground} />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
+        <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
+          {lists.length === 0
+            ? "No lists yet"
+            : `${lists.length} list${lists.length !== 1 ? "s" : ""}`}
+        </Text>
       </View>
 
       {lists.length === 0 ? (
@@ -191,18 +210,27 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 18,
+    borderBottomWidth: 1,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    gap: 8,
+  },
+  headerTop: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
   },
-  headerTitle: { fontSize: 40, fontFamily: "Fredoka_700Bold", letterSpacing: 0.3 },
-  headerSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
+  logoWrap: {
+    borderRadius: 12,
+    paddingVertical: 4,
+  },
+  logo: { width: 118, height: 34 },
+  headerSub: { fontSize: 13, fontFamily: "Inter_400Regular" },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingBottom: 4,
   },
   premiumBadge: {
     flexDirection: "row",
