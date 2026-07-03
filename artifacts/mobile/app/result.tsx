@@ -113,18 +113,29 @@ export default function ResultScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <TouchableOpacity
-        style={[styles.backBtn, { top: topPad + 8 }]}
-        onPress={() => { clearTimeouts(); router.back(); }}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: topPad + 8,
+            backgroundColor: colors.card,
+            borderBottomColor: colors.border,
+          },
+        ]}
       >
-        <ArrowLeft size={22} color={colors.mutedForeground} />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => { clearTimeouts(); router.back(); }}
+        >
+          <ArrowLeft size={22} color={colors.mutedForeground} />
+        </TouchableOpacity>
 
-      <View style={styles.revealArea}>
         <Text style={[styles.listName, { color: colors.foreground }]}>
           &ldquo;{list.name}&rdquo;
         </Text>
+      </View>
 
+      <View style={styles.revealArea}>
         <Animated.View
           style={[
             styles.resultCard,
@@ -197,8 +208,18 @@ export default function ResultScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center" },
-  backBtn: { position: "absolute", left: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center", zIndex: 10 },
-  listName: { fontSize: 46, fontFamily: "NowAlt_900Black", letterSpacing: 0.2, textAlign: "center", marginTop: -20 },
+  header: {
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    alignItems: "center",
+    gap: 8,
+  },
+  backBtn: { alignSelf: "flex-start", width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  listName: { fontSize: 46, fontFamily: "NowAlt_900Black", letterSpacing: 0.2, textAlign: "center" },
   revealArea: { flex: 1, alignItems: "center", justifyContent: "center", width: "100%", paddingHorizontal: 32, gap: 16 },
   resultCard: { width: "100%", minHeight: 180, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", padding: 32 },
   idleText: { fontSize: 18, fontFamily: "Inter_400Regular" },
