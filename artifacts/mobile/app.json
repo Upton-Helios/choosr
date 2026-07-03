@@ -14,9 +14,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.choosr.app"
     },
-    "android": {},
+    "android": {
+      "package": "com.choosr.app"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
