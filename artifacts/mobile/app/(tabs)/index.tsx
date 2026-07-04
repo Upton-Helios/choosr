@@ -25,6 +25,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const logoSource = require("@/assets/images/choosr-logo-new.png");
+const iconLogoSource = require("@/assets/images/icon.png");
 
 import { getCategoryForList } from "@/constants/categories";
 import {
@@ -242,7 +243,7 @@ export default function HomeScreen() {
       {lists.length === 0 ? (
         <View style={styles.empty}>
           <View style={[styles.emptyIcon, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={styles.emptyIconEmoji}>🎲</Text>
+            <Image source={iconLogoSource} style={styles.emptyIconLogo} resizeMode="contain" />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Let's make your first list</Text>
           <Text style={[styles.emptyDesc, { color: colors.mutedForeground }]}>
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
   },
-  emptyIconEmoji: { fontSize: 42 },
+  emptyIconLogo: { width: 48, height: 48 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "center" },
   emptyDesc: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
   emptyCta: {
