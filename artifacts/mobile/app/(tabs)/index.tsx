@@ -209,7 +209,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.statsRow, { backgroundColor: colors.secondary + "80" }]}>
+          <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <View style={[styles.statIconWrap, { backgroundColor: colors.card }]}>
                 <ListChecks size={14} color={colors.primary} />
@@ -341,9 +341,6 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
   },
   statItem: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
   statDivider: { width: 1, height: 32, marginHorizontal: 12 },
