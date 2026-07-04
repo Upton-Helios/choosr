@@ -17,19 +17,16 @@ export interface DecisionList {
 
 interface ListsContextValue {
   lists: DecisionList[];
-  isPremium: boolean;
   isLoaded: boolean;
   addList: (name: string, options: string[]) => DecisionList;
   updateList: (id: string, name: string, options: string[]) => void;
   deleteList: (id: string) => void;
   updateLastPick: (id: string, pick: string) => void;
-  unlockPremium: () => void;
 }
 
 const ListsContext = createContext<ListsContextValue | null>(null);
 
 const LISTS_KEY = "@decision_randomizer/lists";
-const PREMIUM_KEY = "@decision_randomizer/premium";
 export const FREE_LIST_LIMIT = 1;
 
 function generateId(): string {
@@ -38,18 +35,13 @@ function generateId(): string {
 
 export function ListsProvider({ children }: { children: React.ReactNode }) {
   const [lists, setLists] = useState<DecisionList[]>([]);
-  const [isPremium, setIsPremium] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const [listsJson, premiumVal] = await Promise.all([
-          AsyncStorage.getItem(LISTS_KEY),
-          AsyncStorage.getItem(PREMIUM_KEY),
-        ]);
+        const listsJson = await AsyncStorage.getItem(LISTS_KEY);
         if (listsJson) setLists(JSON.parse(listsJson));
-        if (premiumVal === "true") setIsPremium(true);
       } catch {}
       setIsLoaded(true);
     }
@@ -115,22 +107,15 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
     [saveLists]
   );
 
-  const unlockPremium = useCallback(async () => {
-    setIsPremium(true);
-    await AsyncStorage.setItem(PREMIUM_KEY, "true");
-  }, []);
-
   return (
     <ListsContext.Provider
       value={{
         lists,
-        isPremium,
         isLoaded,
         addList,
         updateList,
         deleteList,
         updateLastPick,
-        unlockPremium,
       }}
     >
       {children}

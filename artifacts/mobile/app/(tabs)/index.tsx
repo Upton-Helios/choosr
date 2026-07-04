@@ -33,6 +33,7 @@ import {
   useLists,
 } from "@/context/ListsContext";
 import { useColors } from "@/hooks/useColors";
+import { useSubscription } from "@/lib/revenuecat";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -150,7 +151,8 @@ function ListCard({
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { lists, isPremium, deleteList } = useLists();
+  const { lists, deleteList } = useLists();
+  const { isSubscribed: isPremium } = useSubscription();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -247,6 +249,7 @@ export default function HomeScreen() {
             Food, movie night, baby names, date ideas — add your options and let Choosr decide.
           </Text>
           <TouchableOpacity
+            testID="new-list-empty-btn"
             onPress={handleNewList}
             activeOpacity={0.85}
             style={[styles.emptyCta, { backgroundColor: colors.primary }]}

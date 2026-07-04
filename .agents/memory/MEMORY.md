@@ -1,1 +1,2 @@
 - [Expo web preview screenshot quirk](expo-screenshot-quirk.md) — screenshot tool returns blank for this artifact's Expo web preview even when app renders fine; trust logs instead.
+- [RevenueCat one-time purchase setup](revenuecat-setup.md) — non_consumable product type, custom Modal for test purchases (not Alert), entitlement as single source of truth.

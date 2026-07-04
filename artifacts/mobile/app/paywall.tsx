@@ -4,6 +4,7 @@ import { Check, List, Shuffle, X, Zap } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -12,8 +13,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useLists } from "@/context/ListsContext";
 import { useColors } from "@/hooks/useColors";
+import { useSubscription } from "@/lib/revenuecat";
 
 const FEATURES = [
   { Icon: List, text: "Unlimited decision lists" },
@@ -24,20 +25,49 @@ const FEATURES = [
 export default function PaywallScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { unlockPremium } = useLists();
-  const [loading, setLoading] = useState(false);
+  const { offerings, purchase, restore, isPurchasing, isRestoring } = useSubscription();
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  async function handlePurchase() {
-    setLoading(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await new Promise((r) => setTimeout(r, 1200));
-    await unlockPremium();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setLoading(false);
-    router.back();
+  const currentOffering = offerings?.current;
+  const packageToPurchase = currentOffering?.availablePackages[0];
+  const priceString = packageToPurchase?.product.priceString ?? "$0.99";
+
+  async function performPurchase() {
+    if (!packageToPurchase) {
+      setError("This offer isn't available right now. Please try again later.");
+      return;
+    }
+    setError(null);
+    setConfirmVisible(false);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await purchase(packageToPurchase);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    } catch (err: any) {
+      if (!err?.userCancelled) {
+        setError(err?.message ?? "Purchase failed. Please try again.");
+      }
+    }
+  }
+
+  function handlePurchase() {
+    setConfirmVisible(true);
+  }
+
+  async function handleRestore() {
+    setError(null);
+    try {
+      await restore();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    } catch (err: any) {
+      setError(err?.message ?? "Restore failed. Please try again.");
+    }
   }
 
   return (
@@ -76,24 +106,59 @@ export default function PaywallScreen() {
 
         <View style={styles.spacer} />
 
-        <Text style={[styles.price, { color: colors.foreground }]}>$0.99</Text>
+        {error && (
+          <Text style={[styles.errorText, { color: colors.destructive as string }]}>{error}</Text>
+        )}
+
+        <Text style={[styles.price, { color: colors.foreground }]}>{priceString}</Text>
         <Text style={[styles.priceNote, { color: colors.mutedForeground }]}>
           One-time purchase · No subscription
         </Text>
 
         <TouchableOpacity
+          testID="paywall-unlock-btn"
           style={[styles.ctaBtn, { backgroundColor: colors.primary }]}
           onPress={handlePurchase}
-          disabled={loading}
+          disabled={isPurchasing || isRestoring}
           activeOpacity={0.85}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaBtnText}>Unlock Now</Text>}
+          {isPurchasing ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaBtnText}>Unlock Now</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.back()} style={styles.restoreBtn}>
-          <Text style={[styles.restoreText, { color: colors.mutedForeground }]}>Restore Purchase</Text>
+        <TouchableOpacity testID="paywall-restore-btn" onPress={handleRestore} style={styles.restoreBtn} disabled={isRestoring || isPurchasing}>
+          {isRestoring ? (
+            <ActivityIndicator color={colors.mutedForeground} size="small" />
+          ) : (
+            <Text style={[styles.restoreText, { color: colors.mutedForeground }]}>Restore Purchase</Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      <Modal visible={confirmVisible} transparent animationType="fade" onRequestClose={() => setConfirmVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Confirm Purchase</Text>
+            <Text style={[styles.modalBody, { color: colors.mutedForeground }]}>
+              This is a test purchase for {priceString}. No real charge will be made in test mode.
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.muted }]}
+                onPress={() => setConfirmVisible(false)}
+              >
+                <Text style={[styles.modalBtnText, { color: colors.foreground }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID="paywall-confirm-btn"
+                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
+                onPress={performPurchase}
+              >
+                <Text style={[styles.modalBtnText, { color: "#fff" }]}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -119,4 +184,12 @@ const styles = StyleSheet.create({
   ctaBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 17 },
   restoreBtn: { paddingVertical: 8 },
   restoreText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  errorText: { fontSize: 13, fontFamily: "Inter_500Medium", textAlign: "center" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", padding: 28 },
+  modalCard: { width: "100%", borderRadius: 20, padding: 22, gap: 8 },
+  modalTitle: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  modalBody: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20, marginBottom: 8 },
+  modalActions: { flexDirection: "row", gap: 10 },
+  modalBtn: { flex: 1, paddingVertical: 13, borderRadius: 14, alignItems: "center" },
+  modalBtnText: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
 });
