@@ -5,16 +5,19 @@ import {
   Clock,
   Crown,
   ListChecks,
+  MoreVertical,
+  Pencil,
   Plus,
   Shuffle,
   Sparkles,
+  Trash2,
 } from "lucide-react-native";
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
-  Alert,
   Animated,
   FlatList,
   Image,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -36,6 +39,8 @@ import {
 import { useColors } from "@/hooks/useColors";
 import { useSubscription } from "@/lib/revenuecat";
 
+const UNDO_TIMEOUT_MS = 4000;
+
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -46,13 +51,11 @@ function getGreeting(): string {
 function ListCard({
   item,
   onPress,
-  onEdit,
-  onDelete,
+  onMenu,
 }: {
   item: DecisionList;
   onPress: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  onMenu: () => void;
 }) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
@@ -71,22 +74,22 @@ function ListCard({
   function handleShufflePressOut() {
     Animated.spring(shuffleScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 10 }).start();
   }
-  function handleLongPress() {
+  function handleMenuPress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(item.name, "What would you like to do?", [
-      { text: "Edit", onPress: onEdit },
-      { text: "Delete", style: "destructive", onPress: onDelete },
-      { text: "Cancel", style: "cancel" },
-    ]);
+    onMenu();
   }
 
   const dotCount = Math.min(item.options.length, 6);
+  const remainingCount = item.options.filter((o) => !(item.crossedOff ?? []).includes(o)).length;
+  const subText = item.crossOffMode
+    ? `${remainingCount} of ${item.options.length} left`
+    : `${item.options.length} choice${item.options.length !== 1 ? "s" : ""}`;
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
         onPress={onPress}
-        onLongPress={handleLongPress}
+        onLongPress={handleMenuPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -101,7 +104,7 @@ function ListCard({
             </Text>
             <View style={styles.cardMetaRow}>
               <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
-                {item.options.length} choice{item.options.length !== 1 ? "s" : ""}
+                {subText}
               </Text>
               <View style={styles.dotsRow}>
                 {Array.from({ length: dotCount }).map((_, i) => (
@@ -110,6 +113,15 @@ function ListCard({
               </View>
             </View>
           </View>
+          <TouchableOpacity
+            onPress={handleMenuPress}
+            style={styles.menuBtn}
+            hitSlop={8}
+            accessibilityLabel={`Options for ${item.name}`}
+            accessibilityRole="button"
+          >
+            <MoreVertical size={18} color={colors.mutedForeground} />
+          </TouchableOpacity>
         </View>
 
         <View style={[styles.cardDivider, { backgroundColor: colors.border }]} />
@@ -152,8 +164,13 @@ function ListCard({
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { lists, deleteList } = useLists();
+  const { lists, deleteList, restoreList } = useLists();
   const { isSubscribed: isPremium } = useSubscription();
+
+  const [menuList, setMenuList] = useState<DecisionList | null>(null);
+  const [confirmDeleteList, setConfirmDeleteList] = useState<DecisionList | null>(null);
+  const [undoState, setUndoState] = useState<{ list: DecisionList; index: number } | null>(null);
+  const undoTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -171,11 +188,37 @@ export default function HomeScreen() {
     router.push("/editor");
   }
 
-  function handleDelete(id: string) {
-    Alert.alert("Delete List", "This cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteList(id) },
-    ]);
+  function handleEditFromMenu() {
+    if (!menuList) return;
+    const id = menuList.id;
+    setMenuList(null);
+    router.push({ pathname: "/editor", params: { listId: id } });
+  }
+
+  function handleDeleteFromMenu() {
+    if (!menuList) return;
+    setConfirmDeleteList(menuList);
+    setMenuList(null);
+  }
+
+  function handleConfirmDelete() {
+    if (!confirmDeleteList) return;
+    const list = confirmDeleteList;
+    const index = lists.findIndex((l) => l.id === list.id);
+    setConfirmDeleteList(null);
+    deleteList(list.id);
+
+    if (undoTimeout.current) clearTimeout(undoTimeout.current);
+    setUndoState({ list, index });
+    undoTimeout.current = setTimeout(() => setUndoState(null), UNDO_TIMEOUT_MS);
+  }
+
+  function handleUndoDelete() {
+    if (!undoState) return;
+    if (undoTimeout.current) clearTimeout(undoTimeout.current);
+    restoreList(undoState.list, undoState.index);
+    setUndoState(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
   return (
@@ -199,15 +242,26 @@ export default function HomeScreen() {
               <Image source={logoSource} style={styles.logo} resizeMode="contain" />
             </View>
 
-            <TouchableOpacity
-              onPress={() => router.push("/paywall")}
-              style={[
-                styles.crownBadge,
-                { backgroundColor: colors.primary + "18", borderColor: colors.primary + "33" },
-              ]}
-            >
-              <Crown size={16} color={colors.primary} />
-            </TouchableOpacity>
+            {isPremium ? (
+              <View
+                style={[styles.crownBadge, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                accessibilityLabel="Premium unlocked"
+              >
+                <Crown size={16} color="#fff" />
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={() => router.push("/paywall")}
+                style={[
+                  styles.crownBadge,
+                  { backgroundColor: colors.primary + "18", borderColor: colors.primary + "33" },
+                ]}
+                accessibilityLabel="Upgrade to premium"
+                accessibilityRole="button"
+              >
+                <Crown size={16} color={colors.primary} />
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.statsRow}>
@@ -281,8 +335,7 @@ export default function HomeScreen() {
               <ListCard
                 item={item}
                 onPress={() => router.push({ pathname: "/result", params: { listId: item.id } })}
-                onEdit={() => router.push({ pathname: "/editor", params: { listId: item.id } })}
-                onDelete={() => handleDelete(item.id)}
+                onMenu={() => setMenuList(item)}
               />
             )}
           />
@@ -294,9 +347,84 @@ export default function HomeScreen() {
         style={[styles.fab, { backgroundColor: colors.primary, bottom: bottomPad + 24 }]}
         onPress={handleNewList}
         activeOpacity={0.85}
+        accessibilityLabel="Create new list"
+        accessibilityRole="button"
       >
         <Plus size={28} color="#fff" />
       </TouchableOpacity>
+
+      {/* Action sheet: Edit / Delete */}
+      <Modal
+        visible={!!menuList}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuList(null)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setMenuList(null)}>
+          <Pressable style={[styles.actionSheet, { backgroundColor: colors.card }]}>
+            <Text style={[styles.actionSheetTitle, { color: colors.foreground }]} numberOfLines={1}>
+              {menuList?.name}
+            </Text>
+            <TouchableOpacity style={styles.actionRow} onPress={handleEditFromMenu}>
+              <Pencil size={18} color={colors.foreground} />
+              <Text style={[styles.actionRowText, { color: colors.foreground }]}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionRow} onPress={handleDeleteFromMenu}>
+              <Trash2 size={18} color={colors.destructive} />
+              <Text style={[styles.actionRowText, { color: colors.destructive }]}>Delete</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionCancel, { backgroundColor: colors.muted }]}
+              onPress={() => setMenuList(null)}
+            >
+              <Text style={[styles.actionCancelText, { color: colors.foreground }]}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Delete confirmation */}
+      <Modal
+        visible={!!confirmDeleteList}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmDeleteList(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.confirmCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.confirmTitle, { color: colors.foreground }]}>Delete List</Text>
+            <Text style={[styles.confirmBody, { color: colors.mutedForeground }]}>
+              Delete &ldquo;{confirmDeleteList?.name}&rdquo;? You can undo this right after.
+            </Text>
+            <View style={styles.confirmActions}>
+              <TouchableOpacity
+                style={[styles.confirmBtn, { backgroundColor: colors.muted }]}
+                onPress={() => setConfirmDeleteList(null)}
+              >
+                <Text style={[styles.confirmBtnText, { color: colors.foreground }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmBtn, { backgroundColor: colors.destructive }]}
+                onPress={handleConfirmDelete}
+              >
+                <Text style={[styles.confirmBtnText, { color: "#fff" }]}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Undo toast */}
+      {undoState && (
+        <View style={[styles.toast, { bottom: bottomPad + 24, backgroundColor: colors.foreground }]}>
+          <Text style={styles.toastText} numberOfLines={1}>
+            &ldquo;{undoState.list.name}&rdquo; deleted
+          </Text>
+          <TouchableOpacity onPress={handleUndoDelete} hitSlop={8}>
+            <Text style={[styles.toastUndo, { color: colors.primary }]}>Undo</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -318,11 +446,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 28,
     gap: 32,
-    shadowColor: "#7B5EF6",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 2,
+    boxShadow: "0px 6px 16px rgba(123,94,246,0.08)",
   },
   headerTop: {
     flexDirection: "row",
@@ -381,6 +505,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  menuBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   iconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   iconEmoji: { fontSize: 24 },
   cardText: { flex: 1, gap: 4 },
@@ -403,11 +528,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 14,
-    shadowColor: "#7B5EF6",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    boxShadow: "0px 3px 8px rgba(123,94,246,0.3)",
   },
   shuffleBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 13 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 40, gap: 12 },
@@ -431,11 +552,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     marginTop: 8,
-    shadowColor: "#7B5EF6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
+    boxShadow: "0px 4px 12px rgba(123,94,246,0.35)",
   },
   emptyCtaText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 },
   fab: {
@@ -446,10 +563,33 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#7B5EF6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    boxShadow: "0px 4px 12px rgba(123,94,246,0.4)",
   },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", padding: 28 },
+  actionSheet: { width: "100%", borderRadius: 20, padding: 10, gap: 2 },
+  actionSheetTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", padding: 12, paddingBottom: 8 },
+  actionRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 14 },
+  actionRowText: { fontSize: 15, fontFamily: "Inter_500Medium" },
+  actionCancel: { marginTop: 6, borderRadius: 14, paddingVertical: 13, alignItems: "center" },
+  actionCancelText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  confirmCard: { width: "100%", borderRadius: 20, padding: 22, gap: 8 },
+  confirmTitle: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  confirmBody: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20, marginBottom: 8 },
+  confirmActions: { flexDirection: "row", gap: 10 },
+  confirmBtn: { flex: 1, paddingVertical: 13, borderRadius: 14, alignItems: "center" },
+  confirmBtnText: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
+  toast: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    boxShadow: "0px 4px 16px rgba(0,0,0,0.25)",
+  },
+  toastText: { color: "#fff", fontFamily: "Inter_500Medium", fontSize: 14, flex: 1, marginRight: 12 },
+  toastUndo: { fontFamily: "Inter_700Bold", fontSize: 14 },
 });

@@ -36,6 +36,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e3a358ca-7886-4d6d-80e3-ea587a336dfe"
+      }
+    },
+    "owner": "upton-helios"
   }
 }

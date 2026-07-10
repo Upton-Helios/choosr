@@ -1,11 +1,13 @@
+import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import { Plus, Trash2, X } from "lucide-react-native";
+import { ClipboardPaste, Crown, Plus, Trash2, X } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
   Alert,
   Platform,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -16,17 +18,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLists } from "@/context/ListsContext";
 import { useColors } from "@/hooks/useColors";
+import { useSubscription } from "@/lib/revenuecat";
 
 export default function EditorScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { listId } = useLocalSearchParams<{ listId?: string }>();
   const { lists, addList, updateList } = useLists();
+  const { isSubscribed: isPremium } = useSubscription();
 
   const existing = listId ? lists.find((l) => l.id === listId) : undefined;
 
   const [name, setName] = useState(existing?.name ?? "");
   const [options, setOptions] = useState<string[]>(existing?.options ?? []);
+  const [crossOffMode, setCrossOffMode] = useState(existing?.crossOffMode ?? false);
   const [newOption, setNewOption] = useState("");
   const inputRef = useRef<TextInput>(null);
 
@@ -41,6 +46,71 @@ export default function EditorScreen() {
     setOptions((prev) => [...prev, trimmed]);
     setNewOption("");
     inputRef.current?.focus();
+  }
+
+  function appendLines(lines: string[]) {
+    setOptions((prev) => {
+      const seen = new Set(prev.map((o) => o.toLowerCase()));
+      const fresh = lines.filter((l) => {
+        const key = l.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return fresh.length ? [...prev, ...fresh] : prev;
+    });
+  }
+
+  // Pasting multi-line text into the option field adds one option per line
+  function handleOptionChange(text: string) {
+    if (!text.includes("\n")) {
+      setNewOption(text);
+      return;
+    }
+    const parts = text.split(/\r?\n/);
+    const last = parts.pop() ?? "";
+    const lines = parts.map((s) => s.trim()).filter(Boolean);
+    if (lines.length) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      appendLines(lines);
+    }
+    setNewOption(last.trim());
+  }
+
+  function handleImportPress() {
+    if (!isPremium) {
+      router.push("/paywall");
+      return;
+    }
+    handlePasteImport();
+  }
+
+  function handleCrossOffToggle(value: boolean) {
+    if (value && !isPremium) {
+      router.push("/paywall");
+      return;
+    }
+    setCrossOffMode(value);
+  }
+
+  async function handlePasteImport() {
+    let text = "";
+    try {
+      text = await Clipboard.getStringAsync();
+    } catch {
+      Alert.alert("Clipboard unavailable", "Couldn't read your clipboard on this device.");
+      return;
+    }
+    const lines = text
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (lines.length === 0) {
+      Alert.alert("Nothing to import", "Copy a list first — one option per line — then tap Import.");
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    appendLines(lines);
   }
 
   function handleRemoveOption(index: number) {
@@ -59,9 +129,9 @@ export default function EditorScreen() {
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (isEdit) {
-      updateList(listId!, name.trim(), options);
+      updateList(listId!, name.trim(), options, crossOffMode);
     } else {
-      addList(name.trim(), options);
+      addList(name.trim(), options, crossOffMode);
     }
     router.back();
   }
@@ -71,7 +141,12 @@ export default function EditorScreen() {
       <View
         style={[styles.header, { paddingTop: topPad + 12, borderBottomColor: colors.border, backgroundColor: colors.background }]}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityLabel="Close"
+          accessibilityRole="button"
+        >
           <X size={22} color={colors.mutedForeground} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>
@@ -102,9 +177,21 @@ export default function EditorScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.label, { color: colors.mutedForeground }]}>
-            OPTIONS ({options.length})
-          </Text>
+          <View style={styles.labelRow}>
+            <Text style={[styles.label, { color: colors.mutedForeground }]}>
+              OPTIONS ({options.length})
+            </Text>
+            <TouchableOpacity
+              onPress={handleImportPress}
+              style={[styles.importBtn, { backgroundColor: colors.secondary }]}
+              accessibilityLabel={isPremium ? "Import options from clipboard" : "Import options from clipboard (Premium)"}
+              accessibilityRole="button"
+            >
+              {!isPremium && <Crown size={12} color={colors.primary} />}
+              <ClipboardPaste size={13} color={colors.primary} />
+              <Text style={[styles.importBtnText, { color: colors.primary }]}>Import</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={[styles.addRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TextInput
@@ -113,7 +200,7 @@ export default function EditorScreen() {
               placeholder="Type an option..."
               placeholderTextColor={colors.mutedForeground}
               value={newOption}
-              onChangeText={setNewOption}
+              onChangeText={handleOptionChange}
               returnKeyType="done"
               onSubmitEditing={handleAddOption}
             />
@@ -121,6 +208,8 @@ export default function EditorScreen() {
               onPress={handleAddOption}
               disabled={!newOption.trim()}
               style={[styles.addBtn, { backgroundColor: newOption.trim() ? colors.primary : colors.muted }]}
+              accessibilityLabel="Add option"
+              accessibilityRole="button"
             >
               <Plus size={18} color={newOption.trim() ? "#fff" : colors.mutedForeground} />
             </TouchableOpacity>
@@ -140,7 +229,12 @@ export default function EditorScreen() {
                     <Text style={[styles.optionIndexText, { color: colors.mutedForeground }]}>{i + 1}</Text>
                   </View>
                   <Text style={[styles.optionText, { color: colors.foreground }]} numberOfLines={1}>{opt}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveOption(i)} style={styles.removeBtn}>
+                  <TouchableOpacity
+                    onPress={() => handleRemoveOption(i)}
+                    style={styles.removeBtn}
+                    accessibilityLabel={`Remove option: ${opt}`}
+                    accessibilityRole="button"
+                  >
                     <Trash2 size={16} color={colors.destructive} />
                   </TouchableOpacity>
                 </View>
@@ -155,6 +249,32 @@ export default function EditorScreen() {
               </Text>
             </View>
           )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={[styles.toggleRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.toggleTextCol}>
+              <View style={styles.toggleTitleRow}>
+                <Text style={[styles.toggleTitle, { color: colors.foreground }]}>Cross off picks</Text>
+                {!isPremium && (
+                  <View style={[styles.proBadge, { backgroundColor: colors.primary + "18" }]}>
+                    <Crown size={10} color={colors.primary} />
+                    <Text style={[styles.proBadgeText, { color: colors.primary }]}>PRO</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.toggleDesc, { color: colors.mutedForeground }]}>
+                Each pick sits out future shuffles until you reset the list
+              </Text>
+            </View>
+            <Switch
+              value={crossOffMode}
+              onValueChange={handleCrossOffToggle}
+              trackColor={{ false: colors.muted, true: colors.primary }}
+              thumbColor="#fff"
+              accessibilityLabel="Cross off picks"
+            />
+          </View>
         </View>
       </KeyboardAwareScrollView>
     </View>
@@ -178,6 +298,38 @@ const styles = StyleSheet.create({
   content: { padding: 20, gap: 24 },
   section: { gap: 10 },
   label: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.8 },
+  labelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  importBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  importBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  toggleTextCol: { flex: 1, gap: 2 },
+  toggleTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  toggleTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  toggleDesc: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
+  proBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  proBadgeText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.3 },
   nameInput: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontFamily: "Inter_400Regular" },
   addRow: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, paddingLeft: 16, paddingRight: 6, paddingVertical: 6, gap: 8 },
   optionInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 8 },

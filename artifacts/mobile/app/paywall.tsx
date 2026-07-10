@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { Check, List, Shuffle, X, Zap } from "lucide-react-native";
+import { Check, ClipboardPaste, List, ListChecks, X, Zap } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -13,12 +13,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { FREE_LIST_LIMIT } from "@/context/ListsContext";
 import { useColors } from "@/hooks/useColors";
 import { useSubscription } from "@/lib/revenuecat";
 
 const FEATURES = [
   { Icon: List, text: "Unlimited decision lists" },
-  { Icon: Shuffle, text: "Unlimited shuffles" },
+  { Icon: ListChecks, text: "Cross off picks — no repeats until you reset" },
+  { Icon: ClipboardPaste, text: "Paste in a full list instantly" },
   { Icon: Zap, text: "Priority support" },
 ];
 
@@ -72,7 +74,12 @@ export default function PaywallScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <TouchableOpacity style={[styles.closeBtn, { top: topPad + 8 }]} onPress={() => router.back()}>
+      <TouchableOpacity
+        style={[styles.closeBtn, { top: topPad + 8 }]}
+        onPress={() => router.back()}
+        accessibilityLabel="Close"
+        accessibilityRole="button"
+      >
         <X size={20} color={colors.mutedForeground} />
       </TouchableOpacity>
 
@@ -81,9 +88,9 @@ export default function PaywallScreen() {
           <Zap size={36} color={colors.primary} />
         </View>
 
-        <Text style={[styles.title, { color: colors.foreground }]}>Unlock Unlimited</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>Unlock Choosr Premium</Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          You've reached the 1-list limit on the free plan. Upgrade to keep creating.
+          The free plan is capped at {FREE_LIST_LIMIT} lists. Upgrade for unlimited lists and smarter decision tools.
         </Text>
 
         <View style={[styles.featureList, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -179,7 +186,7 @@ const styles = StyleSheet.create({
   priceNote: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: -8, marginBottom: 4 },
   ctaBtn: {
     width: "100%", paddingVertical: 17, borderRadius: 18, alignItems: "center",
-    shadowColor: "#7B5EF6", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 14, elevation: 8,
+    boxShadow: "0px 4px 14px rgba(123,94,246,0.4)",
   },
   ctaBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 17 },
   restoreBtn: { paddingVertical: 8 },

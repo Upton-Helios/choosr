@@ -1,7 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, CheckCircle, Pencil, Shuffle } from "lucide-react-native";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, CheckCircle, Pencil, RotateCcw, Shuffle } from "lucide-react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Platform,
@@ -36,7 +36,7 @@ export default function ResultScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { listId } = useLocalSearchParams<{ listId: string }>();
-  const { lists, updateLastPick } = useLists();
+  const { lists, updateLastPick, crossOffOption, resetCrossedOff } = useLists();
 
   const list = lists.find((l) => l.id === listId);
 
@@ -51,18 +51,28 @@ export default function ResultScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
+  const crossOffMode = !!list?.crossOffMode;
+  const crossedOff = useMemo(() => list?.crossedOff ?? [], [list]);
+  const remaining = useMemo(
+    () => (list ? list.options.filter((o) => !crossedOff.includes(o)) : []),
+    [list, crossedOff]
+  );
+  const allUsed = crossOffMode && remaining.length === 0;
+
   function clearTimeouts() {
     timeouts.current.forEach(clearTimeout);
     timeouts.current = [];
   }
 
-  const runShuffle = useCallback(() => {
-    if (!list || list.options.length < 2) return;
+  const runShuffle = useCallback((poolOverride?: string[]) => {
+    if (!list) return;
+    const pool = poolOverride ?? (crossOffMode ? remaining : list.options);
+    if (pool.length === 0) return;
     clearTimeouts();
     setPhase("spinning");
 
-    const pick = list.options[Math.floor(Math.random() * list.options.length)];
-    const frames = buildFrames(list.options, pick);
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    const frames = buildFrames(pool, pick);
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     glowAnim.setValue(0);
@@ -79,6 +89,7 @@ export default function ResultScreen() {
           setWinner(pick);
           setPhase("reveal");
           updateLastPick(listId, pick);
+          if (crossOffMode) crossOffOption(listId, pick);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
           Animated.parallel([
@@ -92,14 +103,22 @@ export default function ResultScreen() {
       timeouts.current.push(t);
       accumulated += frame.delay;
     });
-  }, [list, listId, updateLastPick]);
+  }, [list, listId, updateLastPick, crossOffMode, remaining, crossOffOption]);
 
   useEffect(() => {
-    if (list && phase === "idle") {
-      const t = setTimeout(runShuffle, 300);
+    if (list && phase === "idle" && !allUsed) {
+      const t = setTimeout(() => runShuffle(), 300);
       return () => clearTimeout(t);
     }
   }, []);
+
+  function handleReset() {
+    if (!list) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    resetCrossedOff(listId);
+    // Context state hasn't propagated yet, so shuffle the full option pool directly
+    runShuffle(list.options);
+  }
 
   useEffect(() => { return () => clearTimeouts(); }, []);
 
@@ -127,6 +146,8 @@ export default function ResultScreen() {
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => { clearTimeouts(); router.back(); }}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
           >
             <ArrowLeft size={22} color={colors.mutedForeground} />
           </TouchableOpacity>
@@ -145,16 +166,14 @@ export default function ResultScreen() {
               backgroundColor: colors.card,
               borderColor: phase === "reveal" ? colors.primary : colors.border,
               transform: [{ scale: scaleAnim }],
-              shadowColor: phase === "reveal" ? colors.primary : "transparent",
-              shadowOpacity: phase === "reveal" ? 0.5 : 0,
-              shadowRadius: 24,
-              shadowOffset: { width: 0, height: 0 },
-              elevation: phase === "reveal" ? 12 : 0,
+              boxShadow: phase === "reveal" ? "0px 0px 24px rgba(123,94,246,0.5)" : "none",
             },
           ]}
         >
           {phase === "idle" ? (
-            <Text style={[styles.idleText, { color: colors.mutedForeground }]}>Getting ready...</Text>
+            <Text style={[styles.idleText, { color: colors.mutedForeground }]}>
+              {allUsed ? "All options have been picked 🎉" : "Getting ready..."}
+            </Text>
           ) : (
             <Text
               style={[
@@ -182,24 +201,75 @@ export default function ResultScreen() {
         )}
       </View>
 
+      {crossOffMode && (
+        <View style={styles.chipsWrap}>
+          {list.options.map((opt, i) => {
+            const isCrossed = crossedOff.includes(opt);
+            return (
+              <View
+                key={`${opt}-${i}`}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: isCrossed ? colors.muted : colors.card,
+                    borderColor: isCrossed ? colors.border : colors.primary + "55",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    isCrossed
+                      ? { color: colors.mutedForeground, textDecorationLine: "line-through" }
+                      : { color: colors.foreground },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {opt}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
       <Text style={[styles.optionsHint, { color: colors.mutedForeground }]}>
-        {list.options.length} option{list.options.length !== 1 ? "s" : ""}
+        {crossOffMode
+          ? `${remaining.length} of ${list.options.length} option${list.options.length !== 1 ? "s" : ""} remaining`
+          : `${list.options.length} option${list.options.length !== 1 ? "s" : ""}`}
       </Text>
 
       <View style={[styles.actions, { paddingBottom: bottomPad + 24 }]}>
-        <TouchableOpacity
-          style={[styles.reshuffleBtn, { backgroundColor: colors.primary }]}
-          onPress={runShuffle}
-          disabled={phase === "spinning"}
-          activeOpacity={0.85}
-        >
-          <Shuffle size={20} color="#fff" />
-          <Text style={styles.reshuffleBtnText}>Shuffle Again</Text>
-        </TouchableOpacity>
+        {allUsed && phase !== "spinning" ? (
+          <TouchableOpacity
+            style={[styles.reshuffleBtn, { backgroundColor: colors.primary }]}
+            onPress={handleReset}
+            activeOpacity={0.85}
+            accessibilityLabel="Reset list and shuffle"
+            accessibilityRole="button"
+          >
+            <RotateCcw size={20} color="#fff" />
+            <Text style={styles.reshuffleBtnText}>Start Over</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.reshuffleBtn, { backgroundColor: colors.primary }]}
+            onPress={() => runShuffle()}
+            disabled={phase === "spinning"}
+            activeOpacity={0.85}
+            accessibilityLabel="Shuffle again"
+            accessibilityRole="button"
+          >
+            <Shuffle size={20} color="#fff" />
+            <Text style={styles.reshuffleBtnText}>Shuffle Again</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={[styles.editBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
           onPress={() => { clearTimeouts(); router.replace({ pathname: "/editor", params: { listId } }); }}
+          accessibilityLabel="Edit list"
+          accessibilityRole="button"
         >
           <Pencil size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
@@ -243,11 +313,27 @@ const styles = StyleSheet.create({
   winnerBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
   winnerBadgeText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   optionsHint: { fontSize: 12, fontFamily: "Inter_400Regular", marginBottom: 24 },
+  chipsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 24,
+    marginBottom: 12,
+  },
+  chip: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    maxWidth: 160,
+  },
+  chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   actions: { flexDirection: "row", gap: 12, paddingHorizontal: 24, width: "100%" },
   reshuffleBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
     paddingVertical: 16, borderRadius: 18,
-    shadowColor: "#7B5EF6", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
+    boxShadow: "0px 4px 12px rgba(123,94,246,0.35)",
   },
   reshuffleBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 16 },
   editBtn: { width: 56, height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1 },
